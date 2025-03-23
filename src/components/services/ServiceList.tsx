@@ -2,14 +2,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRight, Check, Sparkles, Tooth, Stethoscope, Baby, Calendar, ShieldAlert } from 'lucide-react';
+import { ArrowRight, Check, Sparkles, tooth, Stethoscope, Baby, Calendar, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const services = {
   general: {
     title: "General Dentistry",
-    icon: Tooth,
+    icon: tooth,
     color: "text-dental-blue",
     bgColor: "bg-dental-light-blue",
     description: "Our general dentistry services focus on maintaining your oral health through preventive care and treating common dental issues.",
