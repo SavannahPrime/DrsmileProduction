@@ -2,19 +2,17 @@
 import React from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import Hero from '@/components/home/Hero';
-import Features from '@/components/home/Features';
-import Testimonials from '@/components/home/Testimonials';
+import AboutHero from '@/components/about/AboutHero';
+import Team from '@/components/about/Team';
 import CTASection from '@/components/home/CTASection';
 
-const Index = () => {
+const About = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-grow">
-        <Hero />
-        <Features />
-        <Testimonials />
+        <AboutHero />
+        <Team />
         <CTASection />
       </main>
       <Footer />
@@ -22,4 +20,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default About;
