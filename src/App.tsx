@@ -10,6 +10,8 @@ import Services from "./pages/Services";
 import Booking from "./pages/Booking";
 import Contact from "./pages/Contact";
 import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
+import BlogAdmin from "./pages/BlogAdmin";
 import PatientPortal from "./pages/PatientPortal";
 import NotFound from "./pages/NotFound";
 
@@ -28,6 +30,8 @@ const App = () => (
           <Route path="/booking" element={<Booking />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:id" element={<BlogPost />} />
+          <Route path="/blog-admin" element={<BlogAdmin />} />
           <Route path="/patient-portal" element={<PatientPortal />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
