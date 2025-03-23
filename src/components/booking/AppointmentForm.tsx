@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Send } from 'lucide-react';
+import { supabase } from "@/integrations/supabase/client";
 
 // Import the smaller components
 import AppointmentDateSelection from './appointment/AppointmentDateSelection';
@@ -51,16 +52,41 @@ const AppointmentForm = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const sendConfirmationEmail = async (appointmentData: any) => {
+    try {
+      const { error } = await supabase.functions.invoke('send-appointment-email', {
+        body: appointmentData,
+      });
+      
+      if (error) throw error;
+      
+      return true;
+    } catch (error) {
+      console.error("Error sending confirmation email:", error);
+      return false;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!isStepTwoComplete) return;
     
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+    // Prepare appointment data
+    const appointmentData = {
+      ...formData,
+      date: date?.toISOString(),
+      timeSlot,
+      dentist,
+      serviceType,
+      status: "pending"
+    };
+    
+    try {
+      // Send confirmation email
+      await sendConfirmationEmail(appointmentData);
       
       // Show success message
       toast({
@@ -82,100 +108,101 @@ const AppointmentForm = () => {
         message: ""
       });
       setStep(1);
-    }, 1500);
+    } catch (error) {
+      toast({
+        title: "Booking Error",
+        description: "There was a problem booking your appointment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="container mx-auto px-4 pt-32 pb-20">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <FormHeader />
-        
-        {/* Steps */}
-        <FormSteps step={step} />
+    <div className="p-8">
+      {/* Steps */}
+      <FormSteps step={step} />
 
-        {/* Form Container */}
-        <div className="glass-card p-8 rounded-2xl animate-fade-up shadow-lg" style={{ animationDelay: '0.3s' }}>
-          <form onSubmit={handleSubmit}>
-            {step === 1 ? (
-              <div>
-                <h2 className="text-xl font-medium mb-6">Select Appointment Details</h2>
-                
-                {/* Date and Time Selection */}
-                <AppointmentDateSelection 
-                  date={date}
-                  setDate={setDate}
-                  timeSlot={timeSlot}
-                  setTimeSlot={setTimeSlot}
-                />
-                
-                {/* Service Type Selection */}
-                <ServiceTypeSelection 
-                  serviceType={serviceType}
-                  setServiceType={setServiceType}
-                />
-                
-                {/* Dentist Selection */}
-                <DentistSelection 
-                  dentist={dentist}
-                  setDentist={setDentist}
-                />
-                
-                <div className="flex justify-end">
-                  <Button 
-                    type="button" 
-                    onClick={handleNext}
-                    disabled={!isStepOneComplete}
-                    className="bg-dental-blue hover:bg-dental-blue/90"
-                  >
-                    Continue
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <h2 className="text-xl font-medium mb-6">Personal Information</h2>
-                
-                {/* Personal Information Form */}
-                <PersonalInformation 
-                  formData={formData}
-                  handleInputChange={handleInputChange}
-                />
-                
-                {/* Appointment Summary */}
-                <AppointmentSummary 
-                  date={date}
-                  timeSlot={timeSlot}
-                  dentist={dentist}
-                  serviceType={serviceType}
-                />
-                
-                <div className="flex justify-between">
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    onClick={handleBack}
-                  >
-                    Back
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={!isStepTwoComplete || isSubmitting}
-                    className="bg-dental-blue hover:bg-dental-blue/90"
-                  >
-                    {isSubmitting ? "Booking..." : (
-                      <>
-                        <span>Book Appointment</span>
-                        <Send size={16} />
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </form>
-        </div>
-      </div>
+      {/* Form Container */}
+      <form onSubmit={handleSubmit}>
+        {step === 1 ? (
+          <div>
+            <h2 className="text-xl font-medium mb-6">Select Appointment Details</h2>
+            
+            {/* Date and Time Selection */}
+            <AppointmentDateSelection 
+              date={date}
+              setDate={setDate}
+              timeSlot={timeSlot}
+              setTimeSlot={setTimeSlot}
+            />
+            
+            {/* Service Type Selection */}
+            <ServiceTypeSelection 
+              serviceType={serviceType}
+              setServiceType={setServiceType}
+            />
+            
+            {/* Dentist Selection */}
+            <DentistSelection 
+              dentist={dentist}
+              setDentist={setDentist}
+            />
+            
+            <div className="flex justify-end">
+              <Button 
+                type="button" 
+                onClick={handleNext}
+                disabled={!isStepOneComplete}
+                className="bg-dental-blue hover:bg-dental-blue/90"
+              >
+                Continue
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <h2 className="text-xl font-medium mb-6">Personal Information</h2>
+            
+            {/* Personal Information Form */}
+            <PersonalInformation 
+              formData={formData}
+              handleInputChange={handleInputChange}
+            />
+            
+            {/* Appointment Summary */}
+            <AppointmentSummary 
+              date={date}
+              timeSlot={timeSlot}
+              dentist={dentist}
+              serviceType={serviceType}
+            />
+            
+            <div className="flex justify-between">
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={handleBack}
+              >
+                Back
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={!isStepTwoComplete || isSubmitting}
+                className="bg-dental-blue hover:bg-dental-blue/90"
+              >
+                {isSubmitting ? "Booking..." : (
+                  <>
+                    <span>Book Appointment</span>
+                    <Send size={16} className="ml-2" />
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+      </form>
     </div>
   );
 };
