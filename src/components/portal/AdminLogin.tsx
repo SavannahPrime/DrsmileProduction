@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, LogIn, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 const AdminLogin = () => {
   const { toast } = useToast();
@@ -73,63 +74,80 @@ const AdminLogin = () => {
         </div>
       </div>
       
-      <div>
-        <Label htmlFor="email">Admin Email</Label>
-        <div className="flex mt-1.5">
-          <div className="bg-dental-light-blue text-dental-blue p-2.5 rounded-l-md">
-            <Mail size={18} />
+      <Card className="border-blue-100">
+        <CardHeader className="bg-blue-50 pb-3">
+          <CardTitle className="text-center text-blue-800">Administrative Login</CardTitle>
+          <CardDescription className="text-center text-blue-600">
+            Secure access for administrative staff only
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="email">Admin Email</Label>
+              <div className="flex mt-1.5">
+                <div className="bg-dental-light-blue text-dental-blue p-2.5 rounded-l-md">
+                  <Mail size={18} />
+                </div>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="admin@drsmile.com"
+                  className="rounded-l-none"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div>
+              <div className="flex justify-between items-center">
+                <Label htmlFor="password">Password</Label>
+                <Button variant="link" className="p-0 h-auto text-xs text-dental-blue">
+                  Forgot password?
+                </Button>
+              </div>
+              <div className="flex mt-1.5">
+                <div className="bg-dental-light-blue text-dental-blue p-2.5 rounded-l-md">
+                  <Lock size={18} />
+                </div>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="******"
+                  className="rounded-l-none"
+                  required
+                />
+              </div>
+            </div>
           </div>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="admin@drsmile.com"
-            className="rounded-l-none"
-            required
-          />
-        </div>
-      </div>
-      
-      <div>
-        <div className="flex justify-between items-center">
-          <Label htmlFor="password">Password</Label>
-          <Button variant="link" className="p-0 h-auto text-xs text-dental-blue">
-            Forgot password?
+        </CardContent>
+        <CardFooter className="flex-col border-t pt-4">
+          <Button 
+            type="submit" 
+            className="w-full bg-dental-blue hover:bg-dental-blue/90"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              "Authenticating..."
+            ) : (
+              <>
+                <LogIn className="mr-2 h-4 w-4" />
+                Admin Sign In
+              </>
+            )}
           </Button>
-        </div>
-        <div className="flex mt-1.5">
-          <div className="bg-dental-light-blue text-dental-blue p-2.5 rounded-l-md">
-            <Lock size={18} />
-          </div>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="******"
-            className="rounded-l-none"
-            required
-          />
-        </div>
-      </div>
-      
-      <Button 
-        type="submit" 
-        className="w-full bg-dental-blue hover:bg-dental-blue/90"
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? (
-          "Logging in..."
-        ) : (
-          <>
-            <LogIn className="mr-2 h-4 w-4" />
-            Admin Sign In
-          </>
-        )}
-      </Button>
+          <p className="text-xs text-center text-gray-500 mt-4">
+            This portal is for authorized personnel only. 
+            Unauthorized access attempts may be monitored and reported.
+          </p>
+        </CardFooter>
+      </Card>
     </form>
   );
 };
