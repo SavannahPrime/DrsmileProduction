@@ -5,9 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, LogIn } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from "@/integrations/supabase/client";
 
 const PatientLogin = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -19,26 +22,49 @@ const PatientLogin = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate login process
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      // Attempt to sign in with Supabase Auth
+      const { error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
       
-      // For demo purposes, just show a success message
+      if (error) throw error;
+      
+      // Check if user is admin (in blog_authors table)
+      const { data: authorData, error: authorError } = await supabase
+        .from('blog_authors')
+        .select('*')
+        .eq('email', formData.email)
+        .single();
+      
+      if (!authorError && authorData) {
+        // User is admin, redirect to admin dashboard
+        navigate('/admin-dashboard');
+      } else {
+        // User is patient, redirect to booking
+        navigate('/booking');
+      }
+      
       toast({
         title: "Login Successful!",
         description: "Welcome back to Dr. Smile Dental Portal.",
         variant: "default",
       });
-      
-      // In a real application, you would:
-      // 1. Validate credentials with the backend
-      // 2. Store auth token
-      // 3. Redirect to dashboard
-    }, 1500);
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast({
+        title: "Login Failed",
+        description: error.message || "Please check your credentials and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

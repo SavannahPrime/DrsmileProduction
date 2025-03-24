@@ -5,9 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, User, Phone, UserPlus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from "@/integrations/supabase/client";
 
 const PatientRegister = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -23,7 +26,7 @@ const PatientRegister = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
@@ -37,22 +40,50 @@ const PatientRegister = () => {
     
     setIsSubmitting(true);
     
-    // Simulate registration process
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      // Register user with Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            phone: formData.phone
+          }
+        }
+      });
       
-      // For demo purposes, just show a success message
+      if (error) throw error;
+      
+      // In a real application, you might also want to create a profile record
+      // in your database with additional user information
+      
       toast({
         title: "Registration Successful!",
-        description: "Welcome to Dr. Smile Dental Portal. You can now log in with your credentials.",
+        description: "Your account has been created. You can now log in with your credentials.",
         variant: "default",
       });
       
-      // In a real application, you would:
-      // 1. Send registration data to backend
-      // 2. Handle verification process
-      // 3. Redirect to login or dashboard
-    }, 1500);
+      // Navigate to booking or login depending on whether email confirmation is required
+      if (data.session) {
+        navigate('/booking');
+      } else {
+        toast({
+          title: "Email Verification Required",
+          description: "Please check your email to verify your account before logging in.",
+        });
+      }
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      toast({
+        title: "Registration Failed",
+        description: error.message || "An error occurred during registration.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -148,6 +179,7 @@ const PatientRegister = () => {
             placeholder="******"
             className="rounded-l-none"
             required
+            minLength={6}
           />
         </div>
       </div>
@@ -167,6 +199,7 @@ const PatientRegister = () => {
             placeholder="******"
             className="rounded-l-none"
             required
+            minLength={6}
           />
         </div>
       </div>

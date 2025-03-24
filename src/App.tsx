@@ -34,7 +34,6 @@ const App = () => (
           <Route path="/blog/:id" element={<BlogPost />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/patient-portal" element={<PatientPortal />} />
-          {/* Hidden admin login route for security */}
           <Route path="/admin-login" element={<AdminLogin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
