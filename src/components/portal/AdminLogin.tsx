@@ -52,8 +52,8 @@ const AdminLogin = () => {
         variant: "default",
       });
       
-      // Redirect to blog admin page
-      navigate('/blog-admin');
+      // Redirect to admin dashboard page
+      navigate('/admin-dashboard');
     } catch (error: any) {
       toast({
         title: "Login Failed",

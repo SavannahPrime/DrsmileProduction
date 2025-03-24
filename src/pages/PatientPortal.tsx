@@ -63,16 +63,12 @@ const PatientPortal = () => {
                   </TabsContent>
                 </Tabs>
               ) : (
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid grid-cols-2 mb-6 w-full">
+                <Tabs value="login" className="w-full">
+                  <TabsList className="grid grid-cols-1 mb-6 w-full">
                     <TabsTrigger value="login">Login</TabsTrigger>
-                    <TabsTrigger value="register">Register</TabsTrigger>
                   </TabsList>
                   <TabsContent value="login">
                     <AdminLogin />
-                  </TabsContent>
-                  <TabsContent value="register">
-                    <AdminRegister />
                   </TabsContent>
                 </Tabs>
               )}
