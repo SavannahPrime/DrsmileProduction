@@ -11,8 +11,6 @@ import Booking from "./pages/Booking";
 import Contact from "./pages/Contact";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
-import BlogAdmin from "./pages/BlogAdmin";
-import PatientPortal from "./pages/PatientPortal";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -32,9 +30,9 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:id" element={<BlogPost />} />
-          <Route path="/blog-admin" element={<BlogAdmin />} />
-          <Route path="/patient-portal" element={<PatientPortal />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          {/* Redirect old patient-portal route to home for compatibility */}
+          <Route path="/patient-portal" element={<Index />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
