@@ -13,6 +13,8 @@ import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import PatientPortal from "./pages/PatientPortal";
+import AdminLogin from "./pages/AdminLogin";
 
 const queryClient = new QueryClient();
 
@@ -31,8 +33,9 @@ const App = () => (
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:id" element={<BlogPost />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          {/* Redirect old patient-portal route to home for compatibility */}
-          <Route path="/patient-portal" element={<Index />} />
+          <Route path="/patient-portal" element={<PatientPortal />} />
+          {/* Hidden admin login route for security */}
+          <Route path="/admin-login" element={<AdminLogin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
