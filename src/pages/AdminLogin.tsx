@@ -18,6 +18,7 @@ const AdminLogin = () => {
     password: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [debug, setDebug] = useState('');
 
   // Check if user is already logged in as admin
   useEffect(() => {
@@ -52,34 +53,40 @@ const AdminLogin = () => {
     setIsSubmitting(true);
     
     try {
-      // Check if the email is in the blog_authors table
-      const { data: authorData, error: authorError } = await supabase
-        .from('blog_authors')
-        .select('*')
-        .eq('email', formData.email)
-        .single();
-      
-      if (authorError || !authorData) {
-        throw new Error('Unauthorized access. Only administrators can log in here.');
-      }
-      
-      // Proceed with login if the email is authorized
-      const { error } = await supabase.auth.signInWithPassword({
+      // Simplified login flow - first attempt to sign in
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
       
       if (error) throw error;
       
-      toast({
-        title: "Login Successful!",
-        description: "Welcome to the admin dashboard.",
-        variant: "default",
-      });
-      
-      // Redirect to admin dashboard page
-      navigate('/admin-dashboard');
+      // Once logged in, check if user is an admin
+      if (data.user) {
+        const { data: authorData, error: authorError } = await supabase
+          .from('blog_authors')
+          .select('*')
+          .eq('email', data.user.email)
+          .single();
+        
+        if (authorError || !authorData) {
+          // If not an admin, sign out and show error
+          await supabase.auth.signOut();
+          throw new Error('Unauthorized access. Only administrators can log in here.');
+        }
+        
+        toast({
+          title: "Login Successful!",
+          description: "Welcome to the admin dashboard.",
+          variant: "default",
+        });
+        
+        // Redirect to admin dashboard page
+        navigate('/admin-dashboard');
+      }
     } catch (error: any) {
+      console.error('Login error:', error);
+      setDebug(`Error: ${error.message}`);
       toast({
         title: "Login Failed",
         description: error.message || "Please check your credentials and try again.",
@@ -94,6 +101,16 @@ const AdminLogin = () => {
     setIsSubmitting(true);
     
     try {
+      // Explicitly create demo admin account if it doesn't exist
+      // This ensures the demo account is always available
+      const demoResponse = await supabase.functions.invoke("generate-temp-password", {
+        body: { createDemoAccounts: true }
+      });
+      
+      if (demoResponse.error) {
+        throw new Error('Failed to ensure demo accounts exist: ' + demoResponse.error.message);
+      }
+      
       const { error } = await supabase.auth.signInWithPassword({
         email: 'admin@drsmile.com',
         password: 'password123',
@@ -110,6 +127,7 @@ const AdminLogin = () => {
       navigate('/admin-dashboard');
     } catch (error: any) {
       console.error('Demo login error:', error);
+      setDebug(`Demo Error: ${error.message}`);
       toast({
         title: "Demo Login Failed",
         description: "Please try again or use regular login.",
@@ -182,6 +200,12 @@ const AdminLogin = () => {
                   />
                 </div>
               </div>
+              
+              {debug && (
+                <div className="text-xs text-red-500 bg-red-50 p-2 rounded border border-red-200">
+                  {debug}
+                </div>
+              )}
             </CardContent>
             <CardFooter className="flex-col space-y-4 border-t pt-4">
               <Button 

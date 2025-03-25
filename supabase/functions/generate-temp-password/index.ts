@@ -25,7 +25,9 @@ async function ensureDemoAccountsExist(supabase: any) {
         },
       });
       
-      if (!existingUser.users || existingUser.users.length === 0) {
+      const userExists = existingUser?.users && existingUser.users.length > 0;
+      
+      if (!userExists) {
         // Create the user in Supabase Auth
         const { data: authData, error: authError } = await supabase.auth.admin.createUser({
           email: account.email,
@@ -68,10 +70,33 @@ async function ensureDemoAccountsExist(supabase: any) {
         }
       } else {
         console.log(`Demo account already exists: ${account.email}`);
+        
+        // Make sure the admin account is in the blog_authors table even if it already exists
+        if (account.isAdmin) {
+          const { data: authorData } = await supabase
+            .from('blog_authors')
+            .select('*')
+            .eq('email', account.email);
+          
+          if (!authorData || authorData.length === 0) {
+            const { error: authorError } = await supabase
+              .from('blog_authors')
+              .insert([{ email: account.email }]);
+            
+            if (authorError) {
+              console.error(`Error adding existing demo admin to blog_authors:`, authorError);
+            } else {
+              console.log(`Added existing admin to blog_authors: ${account.email}`);
+            }
+          }
+        }
       }
     }
+    
+    return { success: true };
   } catch (error) {
     console.error("Error ensuring demo accounts exist:", error);
+    return { success: false, error };
   }
 }
 
@@ -88,10 +113,24 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Ensure demo accounts exist
+    const requestData = await req.json();
+    
+    // Check if this is a request to ensure demo accounts exist
+    if (requestData.createDemoAccounts) {
+      const result = await ensureDemoAccountsExist(supabase);
+      return new Response(
+        JSON.stringify(result),
+        {
+          status: result.success ? 200 : 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+    
+    // Ensure demo accounts exist for all operations
     await ensureDemoAccountsExist(supabase);
     
-    const { email } = await req.json();
+    const { email } = requestData;
     
     if (!email) {
       return new Response(
