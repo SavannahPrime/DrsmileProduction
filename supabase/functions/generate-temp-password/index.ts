@@ -8,6 +8,73 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Function to create demo accounts if they don't exist
+async function ensureDemoAccountsExist(supabase: any) {
+  try {
+    // Demo accounts credentials
+    const demoAccounts = [
+      { email: 'patient@drsmile.com', password: 'password123', isAdmin: false },
+      { email: 'admin@drsmile.com', password: 'password123', isAdmin: true }
+    ];
+    
+    for (const account of demoAccounts) {
+      // Check if account already exists
+      const { data: existingUser } = await supabase.auth.admin.listUsers({
+        filters: {
+          email: account.email,
+        },
+      });
+      
+      if (!existingUser.users || existingUser.users.length === 0) {
+        // Create the user in Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email: account.email,
+          password: account.password,
+          email_confirm: true,
+        });
+        
+        if (authError) {
+          console.error(`Error creating demo account ${account.email}:`, authError);
+          continue;
+        }
+        
+        console.log(`Demo account created: ${account.email}`);
+        
+        // If admin, add to blog_authors table
+        if (account.isAdmin) {
+          const { error: authorError } = await supabase
+            .from('blog_authors')
+            .insert([{ email: account.email }]);
+          
+          if (authorError) {
+            console.error(`Error adding demo admin to blog_authors:`, authorError);
+          }
+        } else {
+          // Add to clients table
+          const { error: clientError } = await supabase
+            .from('clients')
+            .insert([{
+              auth_id: authData.user.id,
+              first_name: 'Demo',
+              last_name: 'Patient',
+              email: account.email,
+              phone: '0700000000',
+              status: 'active'
+            }]);
+          
+          if (clientError) {
+            console.error(`Error adding demo patient to clients:`, clientError);
+          }
+        }
+      } else {
+        console.log(`Demo account already exists: ${account.email}`);
+      }
+    }
+  } catch (error) {
+    console.error("Error ensuring demo accounts exist:", error);
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -20,6 +87,9 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Ensure demo accounts exist
+    await ensureDemoAccountsExist(supabase);
     
     const { email } = await req.json();
     

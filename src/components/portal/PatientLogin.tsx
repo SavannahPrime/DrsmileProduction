@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, LogIn } from 'lucide-react';
+import { Mail, Lock, LogIn, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
+import { Separator } from '@/components/ui/separator';
 
 const PatientLogin = () => {
   const { toast } = useToast();
@@ -60,6 +61,44 @@ const PatientLogin = () => {
       toast({
         title: "Login Failed",
         description: error.message || "Please check your credentials and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const loginWithDemo = async (type: 'patient' | 'admin') => {
+    setIsSubmitting(true);
+    
+    try {
+      const email = type === 'patient' ? 'patient@drsmile.com' : 'admin@drsmile.com';
+      const password = 'password123'; // Demo password
+      
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Demo Login Successful!",
+        description: `You are now logged in as a demo ${type}.`,
+        variant: "default",
+      });
+      
+      // Redirect to appropriate page
+      if (type === 'admin') {
+        navigate('/admin-dashboard');
+      } else {
+        navigate('/booking');
+      }
+    } catch (error: any) {
+      console.error('Demo login error:', error);
+      toast({
+        title: "Demo Login Failed",
+        description: "Please try again or use regular login.",
         variant: "destructive",
       });
     } finally {
@@ -126,6 +165,36 @@ const PatientLogin = () => {
           </>
         )}
       </Button>
+
+      <div className="relative my-4">
+        <Separator />
+        <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-xs text-gray-500">
+          OR TRY DEMO ACCOUNTS
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="border-dental-blue/30 hover:bg-dental-light-blue/20"
+          onClick={() => loginWithDemo('patient')}
+          disabled={isSubmitting}
+        >
+          <UserCheck className="mr-2 h-4 w-4" />
+          Demo Patient
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="border-dental-blue/30 hover:bg-dental-light-blue/20"
+          onClick={() => loginWithDemo('admin')}
+          disabled={isSubmitting}
+        >
+          <UserCheck className="mr-2 h-4 w-4" />
+          Demo Admin
+        </Button>
+      </div>
     </form>
   );
 };

@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, LogIn, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, LogIn, ShieldCheck, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
+import { Separator } from '@/components/ui/separator';
 
 const AdminLogin = () => {
   const { toast } = useToast();
@@ -82,6 +83,36 @@ const AdminLogin = () => {
       toast({
         title: "Login Failed",
         description: error.message || "Please check your credentials and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const loginWithDemo = async () => {
+    setIsSubmitting(true);
+    
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: 'admin@drsmile.com',
+        password: 'password123',
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Demo Admin Login Successful!",
+        description: "You are now logged in as a demo administrator.",
+        variant: "default",
+      });
+      
+      navigate('/admin-dashboard');
+    } catch (error: any) {
+      console.error('Demo login error:', error);
+      toast({
+        title: "Demo Login Failed",
+        description: "Please try again or use regular login.",
         variant: "destructive",
       });
     } finally {
@@ -167,6 +198,25 @@ const AdminLogin = () => {
                   </>
                 )}
               </Button>
+              
+              <div className="relative my-1 w-full">
+                <Separator />
+                <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-xs text-gray-500">
+                  OR
+                </span>
+              </div>
+              
+              <Button 
+                type="button" 
+                variant="outline"
+                className="w-full border-dental-blue/30 hover:bg-dental-light-blue/20"
+                onClick={loginWithDemo}
+                disabled={isSubmitting}
+              >
+                <UserCheck className="mr-2 h-4 w-4" />
+                Use Demo Admin Account
+              </Button>
+              
               <div className="text-xs text-center text-gray-500 flex items-center justify-center">
                 <ShieldCheck className="h-3 w-3 mr-1" />
                 Secured access point

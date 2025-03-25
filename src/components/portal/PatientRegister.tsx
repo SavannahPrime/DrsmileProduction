@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, User, Phone, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const PatientRegister = () => {
   const { toast } = useToast();
@@ -20,6 +21,7 @@ const PatientRegister = () => {
     confirmPassword: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -56,8 +58,7 @@ const PatientRegister = () => {
       
       if (error) throw error;
       
-      // In a real application, you might also want to create a profile record
-      // in your database with additional user information
+      setRegistrationSuccess(true);
       
       toast({
         title: "Registration Successful!",
@@ -85,6 +86,28 @@ const PatientRegister = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (registrationSuccess) {
+    return (
+      <Alert className="bg-green-50 border-green-200">
+        <AlertDescription className="text-center py-4">
+          <h3 className="text-lg font-semibold text-green-700 mb-2">Registration Successful!</h3>
+          <p className="mb-4 text-green-600">Your account has been created successfully.</p>
+          <p className="text-sm text-gray-600 mb-4">
+            {supabase.auth.getSession() ? 
+              "You are now logged in and can book appointments." : 
+              "Please check your email for a verification link before logging in."}
+          </p>
+          <Button 
+            onClick={() => navigate('/booking')} 
+            className="bg-dental-blue hover:bg-dental-blue/90"
+          >
+            Continue to Booking
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
