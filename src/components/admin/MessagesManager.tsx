@@ -1,20 +1,29 @@
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { Search, Send, User, Clock } from 'lucide-react';
 import { format } from 'date-fns';
+import { fetchMessages, sendMessage, fetchClients } from '@/lib/api';
 
 type Message = {
   id: string;
-  client_id: string;
-  client_name: string;
+  sender_id: string;
+  receiver_id: string;
   content: string;
-  timestamp: string;
+  created_at: string;
   is_from_admin: boolean;
+  is_read: boolean;
+};
+
+type Client = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
 };
 
 type Conversation = {
@@ -28,121 +37,127 @@ type Conversation = {
 const MessagesManager = () => {
   const { toast } = useToast();
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [messageInput, setMessageInput] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Mock data for demonstration
-  const mockConversations: Conversation[] = [
-    {
-      client_id: '1',
-      client_name: 'John Doe',
-      last_message: 'When is my next appointment?',
-      last_timestamp: '2025-04-05T14:30:00Z',
-      messages: [
-        {
-          id: '1-1',
-          client_id: '1',
-          client_name: 'John Doe',
-          content: 'Hello, I would like to reschedule my appointment.',
-          timestamp: '2025-04-04T13:20:00Z',
-          is_from_admin: false
-        },
-        {
-          id: '1-2',
-          client_id: '1',
-          client_name: 'John Doe',
-          content: 'Sure, we can help you with that. When would you like to reschedule?',
-          timestamp: '2025-04-04T14:15:00Z',
-          is_from_admin: true
-        },
-        {
-          id: '1-3',
-          client_id: '1',
-          client_name: 'John Doe',
-          content: 'Next week would be better for me, if possible.',
-          timestamp: '2025-04-04T16:45:00Z',
-          is_from_admin: false
-        },
-        {
-          id: '1-4',
-          client_id: '1',
-          client_name: 'John Doe',
-          content: 'When is my next appointment?',
-          timestamp: '2025-04-05T14:30:00Z',
-          is_from_admin: false
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [messagesData, clientsData] = await Promise.all([
+        fetchMessages(),
+        fetchClients()
+      ]);
+      
+      // Process messages into conversations
+      const clientMap = clientsData.reduce((acc: Record<string, Client>, client: Client) => {
+        acc[client.id] = client;
+        return acc;
+      }, {});
+      
+      const conversationMap: Record<string, Conversation> = {};
+      
+      messagesData.forEach((message: Message) => {
+        // Determine the client ID (non-admin party)
+        const clientId = message.is_from_admin ? message.receiver_id : message.sender_id;
+        
+        if (!clientMap[clientId]) return; // Skip if client not found
+        
+        const clientName = `${clientMap[clientId].first_name} ${clientMap[clientId].last_name}`;
+        
+        if (!conversationMap[clientId]) {
+          conversationMap[clientId] = {
+            client_id: clientId,
+            client_name: clientName,
+            last_message: message.content,
+            last_timestamp: message.created_at,
+            messages: [message]
+          };
+        } else {
+          conversationMap[clientId].messages.push(message);
+          
+          // Update last message if this one is newer
+          const lastTimestamp = new Date(conversationMap[clientId].last_timestamp);
+          const messageTimestamp = new Date(message.created_at);
+          
+          if (messageTimestamp > lastTimestamp) {
+            conversationMap[clientId].last_message = message.content;
+            conversationMap[clientId].last_timestamp = message.created_at;
+          }
         }
-      ]
-    },
-    {
-      client_id: '2',
-      client_name: 'Jane Smith',
-      last_message: 'Your appointment has been confirmed for this Friday at 2pm.',
-      last_timestamp: '2025-04-03T10:15:00Z',
-      messages: [
-        {
-          id: '2-1',
-          client_id: '2',
-          client_name: 'Jane Smith',
-          content: 'I need to confirm my appointment for this week.',
-          timestamp: '2025-04-03T09:20:00Z',
-          is_from_admin: false
-        },
-        {
-          id: '2-2',
-          client_id: '2',
-          client_name: 'Jane Smith',
-          content: 'Your appointment has been confirmed for this Friday at 2pm.',
-          timestamp: '2025-04-03T10:15:00Z',
-          is_from_admin: true
-        }
-      ]
+      });
+      
+      // Sort conversations by last message timestamp (newest first)
+      const sortedConversations = Object.values(conversationMap).sort((a, b) => {
+        return new Date(b.last_timestamp).getTime() - new Date(a.last_timestamp).getTime();
+      });
+      
+      // Sort messages within each conversation by timestamp
+      sortedConversations.forEach(convo => {
+        convo.messages.sort((a, b) => {
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        });
+      });
+      
+      setConversations(sortedConversations);
+      setClients(clientsData);
+    } catch (error) {
+      console.error("Error loading messages:", error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   useEffect(() => {
-    // Simulating fetching conversations
-    setLoading(true);
-    setTimeout(() => {
-      setConversations(mockConversations);
-      setLoading(false);
-    }, 500);
+    loadData();
   }, []);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!messageInput.trim() || !activeConversation) return;
     
-    const newMessage: Message = {
-      id: Math.random().toString(36).substring(2, 9),
-      client_id: activeConversation,
-      client_name: conversations.find(c => c.client_id === activeConversation)?.client_name || 'Unknown',
-      content: messageInput.trim(),
-      timestamp: new Date().toISOString(),
-      is_from_admin: true
-    };
-    
-    // Update conversations with new message
-    setConversations(conversations.map(convo => {
-      if (convo.client_id === activeConversation) {
-        return {
-          ...convo,
-          last_message: messageInput.trim(),
-          last_timestamp: new Date().toISOString(),
-          messages: [...convo.messages, newMessage]
-        };
+    try {
+      const newMessage = {
+        sender_id: 'admin', // Using 'admin' as a placeholder - in a real app, use the admin's ID
+        receiver_id: activeConversation,
+        content: messageInput.trim(),
+        is_from_admin: true,
+        is_read: false
+      };
+      
+      const result = await sendMessage(newMessage);
+      
+      if (result) {
+        // Update conversations state
+        setConversations(conversations.map(convo => {
+          if (convo.client_id === activeConversation) {
+            return {
+              ...convo,
+              last_message: messageInput.trim(),
+              last_timestamp: new Date().toISOString(),
+              messages: [...convo.messages, result]
+            };
+          }
+          return convo;
+        }));
+        
+        // Clear input
+        setMessageInput('');
+        
+        toast({
+          title: "Message Sent",
+          description: `Your message has been sent to ${conversations.find(c => c.client_id === activeConversation)?.client_name}`,
+        });
       }
-      return convo;
-    }));
-    
-    // Clear input
-    setMessageInput('');
-    
-    // In a real application, you would also save the message to the database
-    toast({
-      title: "Message Sent",
-      description: `Your message has been sent to ${conversations.find(c => c.client_id === activeConversation)?.client_name}`,
-    });
+    } catch (error: any) {
+      console.error("Error sending message:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send message",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredConversations = conversations.filter(convo => 
@@ -225,7 +240,7 @@ const MessagesManager = () => {
                     <div className="text-sm">{message.content}</div>
                     <div className={`text-xs mt-1 ${message.is_from_admin ? 'text-blue-100' : 'text-gray-500'}`}>
                       <Clock className="inline-block h-3 w-3 mr-1" />
-                      {format(new Date(message.timestamp), 'MMM d, h:mm a')}
+                      {format(new Date(message.created_at), 'MMM d, h:mm a')}
                     </div>
                   </div>
                 </div>

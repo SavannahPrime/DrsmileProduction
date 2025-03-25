@@ -6,18 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { User, UserPlus, UserX, Edit, Search, Mail, Phone, Calendar } from 'lucide-react';
+import { fetchClients, addClient, updateClient, deleteClient } from '@/lib/api';
 
 type Client = {
   id: string;
+  auth_id: string;
   first_name: string;
   last_name: string;
   email: string;
   phone: string;
   date_of_birth?: string;
-  registered_date: string;
-  status: 'active' | 'banned';
+  created_at: string;
+  status: 'active' | 'inactive' | 'banned';
 };
 
 const ClientsManager = () => {
@@ -34,51 +35,15 @@ const ClientsManager = () => {
   });
   const [editingClient, setEditingClient] = useState<Client | null>(null);
 
-  const fetchClients = async () => {
+  const loadClients = async () => {
     setLoading(true);
-    try {
-      // This is a mock API call - in a real app, you would fetch from your Supabase database
-      // const { data, error } = await supabase.from('clients').select('*');
-      
-      // Mock data for demonstration
-      const mockData = [
-        {
-          id: '1',
-          first_name: 'John',
-          last_name: 'Doe',
-          email: 'john@example.com',
-          phone: '123-456-7890',
-          date_of_birth: '1985-06-15',
-          registered_date: '2024-01-10',
-          status: 'active' as const
-        },
-        {
-          id: '2',
-          first_name: 'Jane',
-          last_name: 'Smith',
-          email: 'jane@example.com',
-          phone: '123-456-7891',
-          date_of_birth: '1990-03-25',
-          registered_date: '2024-02-15',
-          status: 'active' as const
-        }
-      ];
-      
-      setClients(mockData);
-    } catch (error) {
-      console.error('Error fetching clients:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load clients",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    const data = await fetchClients();
+    setClients(data);
+    setLoading(false);
   };
 
   useEffect(() => {
-    fetchClients();
+    loadClients();
   }, []);
 
   const handleAddClient = async () => {
@@ -93,43 +58,30 @@ const ClientsManager = () => {
         return;
       }
       
-      // In a real app, you would insert into the database and generate credentials
-      /* 
-      const { data, error } = await supabase.from('clients').insert({
-        ...newClient,
-        registered_date: new Date().toISOString(),
-        status: 'active'
-      });
-      */
+      const result = await addClient(newClient);
       
-      // Mock new client with generated ID
-      const newClientWithId = {
-        ...newClient,
-        id: Math.random().toString(36).substring(2, 9),
-        registered_date: new Date().toISOString().split('T')[0],
-        status: 'active' as const
-      };
-      
-      setClients([...clients, newClientWithId]);
-      
-      // Reset form
-      setNewClient({
-        first_name: '',
-        last_name: '',
-        email: '',
-        phone: '',
-        date_of_birth: '',
-      });
-      
-      toast({
-        title: "Success",
-        description: "Client added successfully and login credentials have been generated.",
-      });
-    } catch (error) {
+      if (result) {
+        setClients([...clients, result]);
+        
+        // Reset form
+        setNewClient({
+          first_name: '',
+          last_name: '',
+          email: '',
+          phone: '',
+          date_of_birth: '',
+        });
+        
+        toast({
+          title: "Success",
+          description: "Client added successfully. Login credentials have been emailed to the client.",
+        });
+      }
+    } catch (error: any) {
       console.error('Error adding client:', error);
       toast({
         title: "Error",
-        description: "Failed to add client",
+        description: error.message || "Failed to add client",
         variant: "destructive",
       });
     }
@@ -139,54 +91,88 @@ const ClientsManager = () => {
     if (!editingClient) return;
     
     try {
-      // In a real app, you would update the database
-      // await supabase.from('clients').update(editingClient).eq('id', editingClient.id);
-      
-      // Update local state
-      setClients(clients.map(client => 
-        client.id === editingClient.id ? editingClient : client
-      ));
-      
-      setEditingClient(null);
-      
-      toast({
-        title: "Success",
-        description: "Client information updated successfully",
+      const result = await updateClient(editingClient.id, {
+        first_name: editingClient.first_name,
+        last_name: editingClient.last_name,
+        email: editingClient.email,
+        phone: editingClient.phone,
+        date_of_birth: editingClient.date_of_birth,
+        status: editingClient.status
       });
-    } catch (error) {
+      
+      if (result) {
+        // Update local state
+        setClients(clients.map(client => 
+          client.id === editingClient.id ? result : client
+        ));
+        
+        setEditingClient(null);
+        
+        toast({
+          title: "Success",
+          description: "Client information updated successfully",
+        });
+      }
+    } catch (error: any) {
       console.error('Error updating client:', error);
       toast({
         title: "Error",
-        description: "Failed to update client information",
+        description: error.message || "Failed to update client information",
         variant: "destructive",
       });
     }
   };
 
-  const handleBanClient = async (id: string, currentStatus: 'active' | 'banned') => {
+  const handleBanClient = async (id: string, authId: string, currentStatus: 'active' | 'inactive' | 'banned') => {
     const newStatus = currentStatus === 'active' ? 'banned' : 'active';
     const action = newStatus === 'banned' ? 'ban' : 'unban';
     
     if (!confirm(`Are you sure you want to ${action} this client?`)) return;
     
     try {
-      // In a real app, you would update the database
-      // await supabase.from('clients').update({ status: newStatus }).eq('id', id);
+      const result = await updateClient(id, { status: newStatus });
       
-      // Update local state
-      setClients(clients.map(client => 
-        client.id === id ? { ...client, status: newStatus } : client
-      ));
-      
-      toast({
-        title: "Success",
-        description: `Client ${newStatus === 'banned' ? 'banned' : 'unbanned'} successfully`,
-      });
-    } catch (error) {
+      if (result) {
+        // Update local state
+        setClients(clients.map(client => 
+          client.id === id ? { ...client, status: newStatus } : client
+        ));
+        
+        toast({
+          title: "Success",
+          description: `Client ${newStatus === 'banned' ? 'banned' : 'unbanned'} successfully`,
+        });
+      }
+    } catch (error: any) {
       console.error(`Error ${action}ning client:`, error);
       toast({
         title: "Error",
-        description: `Failed to ${action} client`,
+        description: error.message || `Failed to ${action} client`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteClient = async (id: string, authId: string) => {
+    if (!confirm("Are you sure you want to delete this client? This action cannot be undone.")) return;
+    
+    try {
+      const success = await deleteClient(id, authId);
+      
+      if (success) {
+        // Update local state
+        setClients(clients.filter(client => client.id !== id));
+        
+        toast({
+          title: "Success",
+          description: "Client deleted successfully",
+        });
+      }
+    } catch (error: any) {
+      console.error('Error deleting client:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete client",
         variant: "destructive",
       });
     }
@@ -318,7 +304,7 @@ const ClientsManager = () => {
                         )}
                         <div className="flex items-center text-sm text-gray-600">
                           <Calendar className="h-4 w-4 mr-2" />
-                          Registered: {client.registered_date}
+                          Registered: {new Date(client.created_at).toLocaleDateString()}
                         </div>
                       </div>
                     </div>
@@ -402,7 +388,7 @@ const ClientsManager = () => {
                     <Button 
                       variant={client.status === 'active' ? 'destructive' : 'default'}
                       size="sm"
-                      onClick={() => handleBanClient(client.id, client.status)}
+                      onClick={() => handleBanClient(client.id, client.auth_id, client.status)}
                     >
                       {client.status === 'active' ? (
                         <>
@@ -415,6 +401,15 @@ const ClientsManager = () => {
                           Unban
                         </>
                       )}
+                    </Button>
+                    
+                    <Button 
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteClient(client.id, client.auth_id)}
+                    >
+                      <UserX className="h-4 w-4 mr-1" />
+                      Delete
                     </Button>
                   </div>
                 </div>

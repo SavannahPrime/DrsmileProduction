@@ -1,112 +1,101 @@
 
-import { User, Mail, Phone } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
-interface FormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  message: string;
-}
-
-interface PersonalInformationProps {
-  formData: FormData;
+type PersonalInformationProps = {
+  formData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    message: string;
+  };
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-}
+  isDisabled?: boolean;
+};
 
-const PersonalInformation = ({ formData, handleInputChange }: PersonalInformationProps) => {
+const PersonalInformation = ({ formData, handleInputChange, isDisabled = false }: PersonalInformationProps) => {
   return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <div className="space-y-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="firstName">First Name</Label>
-          <div className="flex mt-1.5">
-            <div className="bg-dental-light-blue text-dental-blue p-2.5 rounded-l-md">
-              <User size={18} />
-            </div>
-            <Input
-              id="firstName"
-              name="firstName"
-              placeholder="John"
-              value={formData.firstName}
-              onChange={handleInputChange}
-              className="rounded-l-none"
-              required
-            />
-          </div>
+          <Label htmlFor="firstName" className="text-gray-700">First Name</Label>
+          <Input
+            id="firstName"
+            name="firstName"
+            value={formData.firstName}
+            onChange={handleInputChange}
+            placeholder="John"
+            className="mt-1"
+            required
+            disabled={isDisabled}
+          />
         </div>
         <div>
-          <Label htmlFor="lastName">Last Name</Label>
-          <div className="flex mt-1.5">
-            <div className="bg-dental-light-blue text-dental-blue p-2.5 rounded-l-md">
-              <User size={18} />
-            </div>
-            <Input
-              id="lastName"
-              name="lastName"
-              placeholder="Doe"
-              value={formData.lastName}
-              onChange={handleInputChange}
-              className="rounded-l-none"
-              required
-            />
-          </div>
+          <Label htmlFor="lastName" className="text-gray-700">Last Name</Label>
+          <Input
+            id="lastName"
+            name="lastName"
+            value={formData.lastName}
+            onChange={handleInputChange}
+            placeholder="Doe"
+            className="mt-1"
+            required
+            disabled={isDisabled}
+          />
         </div>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="email">Email Address</Label>
-          <div className="flex mt-1.5">
-            <div className="bg-dental-light-blue text-dental-blue p-2.5 rounded-l-md">
-              <Mail size={18} />
-            </div>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="john.doe@example.com"
-              value={formData.email}
-              onChange={handleInputChange}
-              className="rounded-l-none"
-              required
-            />
-          </div>
+          <Label htmlFor="email" className="text-gray-700">Email Address</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleInputChange}
+            placeholder="john.doe@example.com"
+            className="mt-1"
+            required
+            disabled={isDisabled}
+          />
         </div>
         <div>
-          <Label htmlFor="phone">Phone Number</Label>
-          <div className="flex mt-1.5">
-            <div className="bg-dental-light-blue text-dental-blue p-2.5 rounded-l-md">
-              <Phone size={18} />
-            </div>
-            <Input
-              id="phone"
-              name="phone"
-              placeholder="(123) 456-7890"
-              value={formData.phone}
-              onChange={handleInputChange}
-              className="rounded-l-none"
-              required
-            />
-          </div>
+          <Label htmlFor="phone" className="text-gray-700">Phone Number</Label>
+          <Input
+            id="phone"
+            name="phone"
+            value={formData.phone}
+            onChange={handleInputChange}
+            placeholder="(123) 456-7890"
+            className="mt-1"
+            required
+            disabled={isDisabled}
+          />
         </div>
       </div>
-      
-      <div className="mb-8">
-        <Label htmlFor="message">Additional Information (Optional)</Label>
+
+      <div>
+        <Label htmlFor="message" className="text-gray-700">Additional Information (Optional)</Label>
         <Textarea
           id="message"
           name="message"
-          placeholder="Please let us know if you have any specific concerns or requirements..."
           value={formData.message}
           onChange={handleInputChange}
-          className="h-32 mt-1.5"
+          placeholder="Any special requests or information the dentist should know..."
+          className="mt-1"
+          rows={4}
         />
       </div>
-    </>
+      
+      {isDisabled && (
+        <div className="bg-gray-50 p-3 rounded-md text-sm text-gray-600">
+          Your personal information is being used from your account. If you need to update it, please go to your profile settings.
+        </div>
+      )}
+    </div>
   );
 };
 

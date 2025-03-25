@@ -1,94 +1,82 @@
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Clock, User, Edit2, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { fetchBookings, updateBooking, deleteBooking, fetchClients, fetchServices, fetchDentists } from '@/lib/api';
 
-type Appointment = {
+type Client = {
   id: string;
-  patient_name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   phone: string;
+};
+
+type Booking = {
+  id: string;
+  client_id: string;
   service: string;
   dentist: string;
   date: string;
   time: string;
   status: string;
+  clients: Client;
 };
 
 const BookingsManager = () => {
   const { toast } = useToast();
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appointments, setAppointments] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
+  const [editingAppointment, setEditingAppointment] = useState<Booking | null>(null);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState("");
   const [dentist, setDentist] = useState("");
   const [status, setStatus] = useState("");
-
-  const fetchAppointments = async () => {
+  const [service, setService] = useState("");
+  const [clients, setClients] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [dentists, setDentists] = useState<any[]>([]);
+  
+  const loadData = async () => {
     setLoading(true);
     try {
-      // This is a mock API call - in a real app, you would fetch from your Supabase database
-      // const { data, error } = await supabase.from('appointments').select('*');
+      const [bookingsData, clientsData, servicesData, dentistsData] = await Promise.all([
+        fetchBookings(),
+        fetchClients(),
+        fetchServices(),
+        fetchDentists()
+      ]);
       
-      // Mock data for demonstration
-      const mockData = [
-        {
-          id: '1',
-          patient_name: 'John Doe',
-          email: 'john@example.com',
-          phone: '123-456-7890',
-          service: 'Teeth Cleaning',
-          dentist: 'Dr. Smith',
-          date: '2025-04-10',
-          time: '10:00 AM',
-          status: 'confirmed'
-        },
-        {
-          id: '2',
-          patient_name: 'Jane Smith',
-          email: 'jane@example.com',
-          phone: '123-456-7891',
-          service: 'Root Canal',
-          dentist: 'Dr. Johnson',
-          date: '2025-04-11',
-          time: '2:00 PM',
-          status: 'pending'
-        }
-      ];
-      
-      setAppointments(mockData);
+      setAppointments(bookingsData);
+      setClients(clientsData);
+      setServices(servicesData);
+      setDentists(dentistsData);
     } catch (error) {
-      console.error('Error fetching appointments:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load appointments",
-        variant: "destructive",
-      });
+      console.error("Error loading data:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAppointments();
+    loadData();
   }, []);
 
-  const handleEditAppointment = (appointment: Appointment) => {
+  const handleEditAppointment = (appointment: Booking) => {
     setEditingAppointment(appointment);
     setDate(appointment.date ? new Date(appointment.date) : undefined);
     setTime(appointment.time);
     setDentist(appointment.dentist);
     setStatus(appointment.status);
+    setService(appointment.service);
   };
 
   const handleSaveChanges = async () => {
@@ -96,58 +84,59 @@ const BookingsManager = () => {
     
     try {
       const updatedAppointment = {
-        ...editingAppointment,
+        client_id: editingAppointment.client_id,
         date: format(date, 'yyyy-MM-dd'),
         time,
         dentist,
+        service,
         status
       };
       
-      // In a real app, you would update the database
-      // await supabase.from('appointments').update(updatedAppointment).eq('id', editingAppointment.id);
+      const result = await updateBooking(editingAppointment.id, updatedAppointment);
       
-      // Update local state
-      setAppointments(appointments.map(app => 
-        app.id === editingAppointment.id ? updatedAppointment : app
-      ));
-      
-      setEditingAppointment(null);
-      
-      toast({
-        title: "Success",
-        description: "Appointment updated successfully",
-      });
-    } catch (error) {
+      if (result) {
+        // Update local state
+        setAppointments(appointments.map(app => 
+          app.id === editingAppointment.id ? { ...app, ...updatedAppointment } : app
+        ));
+        
+        setEditingAppointment(null);
+        
+        toast({
+          title: "Success",
+          description: "Appointment updated successfully",
+        });
+      }
+    } catch (error: any) {
       console.error('Error updating appointment:', error);
       toast({
         title: "Error",
-        description: "Failed to update appointment",
+        description: error.message || "Failed to update appointment",
         variant: "destructive",
       });
     }
   };
 
-  const handleCancelAppointment = async (id: string) => {
+  const handleCancelAppointment = async (id: string, clientId: string) => {
     if (!confirm("Are you sure you want to cancel this appointment?")) return;
     
     try {
-      // In a real app, you would update the database
-      // await supabase.from('appointments').update({ status: 'cancelled' }).eq('id', id);
+      const success = await deleteBooking(id, clientId);
       
-      // Update local state
-      setAppointments(appointments.map(app => 
-        app.id === id ? { ...app, status: 'cancelled' } : app
-      ));
-      
-      toast({
-        title: "Success",
-        description: "Appointment cancelled successfully",
-      });
-    } catch (error) {
+      if (success) {
+        // Update local state
+        setAppointments(appointments.filter(app => app.id !== id));
+        
+        toast({
+          title: "Success",
+          description: "Appointment cancelled successfully",
+        });
+      }
+    } catch (error: any) {
       console.error('Error cancelling appointment:', error);
       toast({
         title: "Error",
-        description: "Failed to cancel appointment",
+        description: error.message || "Failed to cancel appointment",
         variant: "destructive",
       });
     }
@@ -161,6 +150,8 @@ const BookingsManager = () => {
         return 'bg-yellow-100 text-yellow-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
+      case 'completed':
+        return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -178,23 +169,23 @@ const BookingsManager = () => {
         <div className="grid gap-4">
           {appointments.map((appointment) => (
             <Card key={appointment.id} className="border-l-4 relative overflow-hidden transition-all hover:shadow-md" 
-              style={{ borderLeftColor: appointment.status === 'confirmed' ? '#10b981' : appointment.status === 'pending' ? '#f59e0b' : '#ef4444' }}>
+              style={{ borderLeftColor: appointment.status === 'confirmed' ? '#10b981' : appointment.status === 'pending' ? '#f59e0b' : appointment.status === 'completed' ? '#3b82f6' : '#ef4444' }}>
               <CardContent className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
                   <div className="md:col-span-2">
                     <div className="flex items-center">
                       <User className="h-5 w-5 text-dental-blue mr-2" />
-                      <h3 className="font-semibold">{appointment.patient_name}</h3>
+                      <h3 className="font-semibold">{appointment.clients.first_name} {appointment.clients.last_name}</h3>
                     </div>
-                    <div className="text-sm text-gray-500 mt-1">{appointment.email}</div>
-                    <div className="text-sm text-gray-500">{appointment.phone}</div>
+                    <div className="text-sm text-gray-500 mt-1">{appointment.clients.email}</div>
+                    <div className="text-sm text-gray-500">{appointment.clients.phone}</div>
                     <div className="mt-2 text-sm font-medium">{appointment.service}</div>
                   </div>
 
                   <div>
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 text-dental-blue mr-2" />
-                      <span>{appointment.date}</span>
+                      <span>{new Date(appointment.date).toLocaleDateString()}</span>
                     </div>
                     <div className="flex items-center mt-1">
                       <Clock className="h-4 w-4 text-dental-blue mr-2" />
@@ -260,15 +251,33 @@ const BookingsManager = () => {
                           </div>
                           
                           <div>
+                            <label className="block text-sm font-medium mb-1">Service</label>
+                            <Select value={service} onValueChange={setService}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a service" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {services.map(service => (
+                                  <SelectItem key={service.id} value={service.name}>
+                                    {service.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div>
                             <label className="block text-sm font-medium mb-1">Dentist</label>
                             <Select value={dentist} onValueChange={setDentist}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select a dentist" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Dr. Smith">Dr. Smith</SelectItem>
-                                <SelectItem value="Dr. Johnson">Dr. Johnson</SelectItem>
-                                <SelectItem value="Dr. Williams">Dr. Williams</SelectItem>
+                                {dentists.map(dentist => (
+                                  <SelectItem key={dentist.id} value={dentist.name}>
+                                    {dentist.name}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -283,25 +292,26 @@ const BookingsManager = () => {
                                 <SelectItem value="confirmed">Confirmed</SelectItem>
                                 <SelectItem value="pending">Pending</SelectItem>
                                 <SelectItem value="cancelled">Cancelled</SelectItem>
+                                <SelectItem value="completed">Completed</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                         </div>
-                        <div className="flex justify-end gap-2">
+                        <DialogFooter>
                           <Button variant="outline" onClick={() => setEditingAppointment(null)}>
                             Cancel
                           </Button>
                           <Button onClick={handleSaveChanges}>
                             Save Changes
                           </Button>
-                        </div>
+                        </DialogFooter>
                       </DialogContent>
                     </Dialog>
                     
                     <Button 
                       variant="destructive" 
                       size="sm"
-                      onClick={() => handleCancelAppointment(appointment.id)}
+                      onClick={() => handleCancelAppointment(appointment.id, appointment.client_id)}
                     >
                       <X className="h-4 w-4 mr-1" />
                       Cancel
@@ -311,6 +321,12 @@ const BookingsManager = () => {
               </CardContent>
             </Card>
           ))}
+          
+          {appointments.length === 0 && (
+            <div className="text-center py-10">
+              <p className="text-gray-500">No appointments found.</p>
+            </div>
+          )}
         </div>
       )}
     </div>
