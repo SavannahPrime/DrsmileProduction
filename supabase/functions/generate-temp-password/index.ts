@@ -71,9 +71,6 @@ async function ensureDemoAccountsExist(supabase: any) {
       } else {
         console.log(`Demo account already exists: ${account.email}`);
         
-        // Get the user ID
-        const userId = existingUser.users[0].id;
-        
         // Make sure the admin account is in the blog_authors table even if it already exists
         if (account.isAdmin) {
           const { data: authorData } = await supabase
@@ -90,32 +87,6 @@ async function ensureDemoAccountsExist(supabase: any) {
               console.error(`Error adding existing demo admin to blog_authors:`, authorError);
             } else {
               console.log(`Added existing admin to blog_authors: ${account.email}`);
-            }
-          }
-        } else {
-          // Check if client exists
-          const { data: clientData } = await supabase
-            .from('clients')
-            .select('*')
-            .eq('email', account.email);
-            
-          // Add to clients table if not exists
-          if (!clientData || clientData.length === 0) {
-            const { error: clientError } = await supabase
-              .from('clients')
-              .insert([{
-                auth_id: userId,
-                first_name: 'Demo',
-                last_name: 'Patient',
-                email: account.email,
-                phone: '0700000000',
-                status: 'active'
-              }]);
-            
-            if (clientError) {
-              console.error(`Error adding existing demo patient to clients:`, clientError);
-            } else {
-              console.log(`Added existing patient to clients: ${account.email}`);
             }
           }
         }
