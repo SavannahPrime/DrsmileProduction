@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { User, UserPlus, UserX, Edit, Search, Mail, Phone, Calendar } from 'lucide-react';
 import { fetchClients, addClient, updateClient, deleteClient } from '@/lib/api';
 
+type ClientStatus = 'active' | 'inactive' | 'banned';
+
 type Client = {
   id: string;
   auth_id: string;
@@ -18,7 +20,12 @@ type Client = {
   phone: string;
   date_of_birth?: string;
   created_at: string;
-  status: 'active' | 'inactive' | 'banned';
+  status: ClientStatus;
+};
+
+// Type for the data coming from the database
+type ClientFromDB = Omit<Client, 'status'> & {
+  status: string;
 };
 
 const ClientsManager = () => {
@@ -38,7 +45,12 @@ const ClientsManager = () => {
   const loadClients = async () => {
     setLoading(true);
     const data = await fetchClients();
-    setClients(data);
+    // Cast the data to ensure status is one of the allowed values
+    const typedData: Client[] = data.map((client: ClientFromDB) => ({
+      ...client,
+      status: client.status as ClientStatus,
+    }));
+    setClients(typedData);
     setLoading(false);
   };
 
@@ -61,7 +73,13 @@ const ClientsManager = () => {
       const result = await addClient(newClient);
       
       if (result) {
-        setClients([...clients, result]);
+        // Ensure the result has the correct type
+        const typedResult: Client = {
+          ...result,
+          status: (result.status || 'active') as ClientStatus,
+        };
+        
+        setClients([...clients, typedResult]);
         
         // Reset form
         setNewClient({
@@ -101,9 +119,15 @@ const ClientsManager = () => {
       });
       
       if (result) {
+        // Ensure the result has the correct type
+        const typedResult: Client = {
+          ...result,
+          status: result.status as ClientStatus,
+        };
+        
         // Update local state
         setClients(clients.map(client => 
-          client.id === editingClient.id ? result : client
+          client.id === editingClient.id ? typedResult : client
         ));
         
         setEditingClient(null);
@@ -123,7 +147,7 @@ const ClientsManager = () => {
     }
   };
 
-  const handleBanClient = async (id: string, authId: string, currentStatus: 'active' | 'inactive' | 'banned') => {
+  const handleBanClient = async (id: string, authId: string, currentStatus: ClientStatus) => {
     const newStatus = currentStatus === 'active' ? 'banned' : 'active';
     const action = newStatus === 'banned' ? 'ban' : 'unban';
     
@@ -133,9 +157,9 @@ const ClientsManager = () => {
       const result = await updateClient(id, { status: newStatus });
       
       if (result) {
-        // Update local state
+        // Update local state with type safety
         setClients(clients.map(client => 
-          client.id === id ? { ...client, status: newStatus } : client
+          client.id === id ? { ...client, status: newStatus as ClientStatus } : client
         ));
         
         toast({
