@@ -8,6 +8,7 @@ import { Mail, Lock, LogIn, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const PatientLogin = () => {
   const { toast } = useToast();
@@ -17,6 +18,7 @@ const PatientLogin = () => {
     password: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -26,10 +28,11 @@ const PatientLogin = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
     
     try {
       // Attempt to sign in with Supabase Auth
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
@@ -44,11 +47,9 @@ const PatientLogin = () => {
         .single();
       
       if (!authorError && authorData) {
-        // User is admin, redirect to admin dashboard
-        navigate('/admin-dashboard');
-      } else {
-        // User is patient, redirect to booking
-        navigate('/booking');
+        // Admins should use admin login, not patient portal
+        await supabase.auth.signOut();
+        throw new Error('Administrators should use the admin login portal.');
       }
       
       toast({
@@ -56,8 +57,12 @@ const PatientLogin = () => {
         description: "Welcome back to Dr. Smile Dental Portal.",
         variant: "default",
       });
+      
+      // User is patient, redirect to booking
+      navigate('/booking');
     } catch (error: any) {
       console.error('Login error:', error);
+      setError(error.message || "Login failed. Please check your credentials and try again.");
       toast({
         title: "Login Failed",
         description: error.message || "Please check your credentials and try again.",
@@ -70,10 +75,10 @@ const PatientLogin = () => {
 
   const loginWithDemo = async () => {
     setIsSubmitting(true);
+    setError(null);
     
     try {
       // Explicitly create demo accounts if they don't exist
-      // This ensures the demo account is always available
       const demoResponse = await supabase.functions.invoke("generate-temp-password", {
         body: { createDemoAccounts: true }
       });
@@ -82,6 +87,7 @@ const PatientLogin = () => {
         throw new Error('Failed to ensure demo accounts exist: ' + demoResponse.error.message);
       }
       
+      // Sign in with demo patient account
       const { error } = await supabase.auth.signInWithPassword({
         email: 'patient@drsmile.com',
         password: 'password123',
@@ -98,6 +104,7 @@ const PatientLogin = () => {
       navigate('/booking');
     } catch (error: any) {
       console.error('Demo login error:', error);
+      setError(error.message || "Demo login failed. Please try again.");
       toast({
         title: "Demo Login Failed",
         description: "Please try again or use regular login.",
@@ -152,6 +159,12 @@ const PatientLogin = () => {
           />
         </div>
       </div>
+      
+      {error && (
+        <Alert variant="destructive" className="py-2">
+          <AlertDescription className="text-sm">{error}</AlertDescription>
+        </Alert>
+      )}
       
       <Button 
         type="submit" 

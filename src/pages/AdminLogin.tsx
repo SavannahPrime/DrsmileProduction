@@ -9,6 +9,7 @@ import { Mail, Lock, LogIn, ShieldCheck, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const AdminLogin = () => {
   const { toast } = useToast();
@@ -18,7 +19,8 @@ const AdminLogin = () => {
     password: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [debug, setDebug] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [demoCreating, setDemoCreating] = useState(false);
 
   // Check if user is already logged in as admin
   useEffect(() => {
@@ -51,9 +53,10 @@ const AdminLogin = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
     
     try {
-      // Simplified login flow - first attempt to sign in
+      // First attempt to sign in
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
@@ -86,7 +89,7 @@ const AdminLogin = () => {
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      setDebug(`Error: ${error.message}`);
+      setError(error.message || "Login failed. Please check your credentials and try again.");
       toast({
         title: "Login Failed",
         description: error.message || "Please check your credentials and try again.",
@@ -99,24 +102,42 @@ const AdminLogin = () => {
 
   const loginWithDemo = async () => {
     setIsSubmitting(true);
+    setDemoCreating(true);
+    setError(null);
     
     try {
       // Explicitly create demo admin account if it doesn't exist
-      // This ensures the demo account is always available
       const demoResponse = await supabase.functions.invoke("generate-temp-password", {
         body: { createDemoAccounts: true }
       });
       
+      console.log("Demo account creation response:", demoResponse);
+      
       if (demoResponse.error) {
-        throw new Error('Failed to ensure demo accounts exist: ' + demoResponse.error.message);
+        throw new Error('Failed to ensure demo accounts exist: ' + demoResponse.error);
       }
       
+      // Short delay to allow demo account creation to finish
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Now sign in with the demo admin account
       const { error } = await supabase.auth.signInWithPassword({
         email: 'admin@drsmile.com',
         password: 'password123',
       });
       
       if (error) throw error;
+      
+      // Verify the user is in the blog_authors table
+      const { data: authorData, error: authorError } = await supabase
+        .from('blog_authors')
+        .select('*')
+        .eq('email', 'admin@drsmile.com')
+        .single();
+      
+      if (authorError || !authorData) {
+        throw new Error('Demo admin account not properly set up. Please try again.');
+      }
       
       toast({
         title: "Demo Admin Login Successful!",
@@ -127,14 +148,15 @@ const AdminLogin = () => {
       navigate('/admin-dashboard');
     } catch (error: any) {
       console.error('Demo login error:', error);
-      setDebug(`Demo Error: ${error.message}`);
+      setError(error.message || "Demo login failed. Please try again later.");
       toast({
         title: "Demo Login Failed",
-        description: "Please try again or use regular login.",
+        description: error.message || "Please try again or use regular login.",
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
+      setDemoCreating(false);
     }
   };
 
@@ -201,10 +223,10 @@ const AdminLogin = () => {
                 </div>
               </div>
               
-              {debug && (
-                <div className="text-xs text-red-500 bg-red-50 p-2 rounded border border-red-200">
-                  {debug}
-                </div>
+              {error && (
+                <Alert variant="destructive" className="text-sm py-2">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
               )}
             </CardContent>
             <CardFooter className="flex-col space-y-4 border-t pt-4">
@@ -237,8 +259,14 @@ const AdminLogin = () => {
                 onClick={loginWithDemo}
                 disabled={isSubmitting}
               >
-                <UserCheck className="mr-2 h-4 w-4" />
-                Use Demo Admin Account
+                {demoCreating ? (
+                  "Creating demo account..."
+                ) : (
+                  <>
+                    <UserCheck className="mr-2 h-4 w-4" />
+                    Use Demo Admin Account
+                  </>
+                )}
               </Button>
               
               <div className="text-xs text-center text-gray-500 flex items-center justify-center">
