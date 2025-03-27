@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { Calendar, MessageSquare, Stethoscope, User, LogOut, Moon, Sun } from 'lucide-react';
-import { useTheme } from '@/hooks/use-theme';
+import { Calendar, MessageSquare, Stethoscope, User, LogOut, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from '@/components/ui/button';
 
 interface SidebarProps {
   activeTab: string;
@@ -14,7 +14,6 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, userFirstName, userLastName }) => {
-  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -28,14 +27,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, userFirstName
   };
 
   return (
-    <div className="w-64 h-full bg-white dark:bg-gray-800 shadow-lg border-r border-gray-200 dark:border-gray-700 flex flex-col">
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+    <div className="w-64 h-full bg-white shadow-lg border-r border-gray-200 flex flex-col">
+      <div className="p-6 border-b border-gray-200">
         <div className="flex items-center space-x-2">
-          <User className="h-8 w-8 text-dental-blue dark:text-blue-400" />
+          <User className="h-8 w-8 text-dental-blue" />
           <div>
-            <h1 className="text-xl font-semibold text-dental-blue dark:text-blue-400">Dr. Smile Dental</h1>
+            <h1 className="text-xl font-semibold text-dental-blue">Dr. Smile Dental</h1>
             {userFirstName && userLastName && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-gray-500">
                 Welcome, {userFirstName} {userLastName}
               </p>
             )}
@@ -49,8 +48,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, userFirstName
             onClick={() => onTabChange('appointments')}
             className={`w-full flex items-center p-3 rounded-lg text-left transition-colors ${
               activeTab === 'appointments'
-                ? 'bg-dental-light-blue dark:bg-blue-900 text-dental-blue dark:text-blue-300'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                ? 'bg-dental-light-blue text-dental-blue'
+                : 'hover:bg-gray-100 text-gray-700'
             }`}
           >
             <Calendar className="h-5 w-5 mr-3" />
@@ -61,8 +60,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, userFirstName
             onClick={() => onTabChange('advisory')}
             className={`w-full flex items-center p-3 rounded-lg text-left transition-colors ${
               activeTab === 'advisory'
-                ? 'bg-dental-light-blue dark:bg-blue-900 text-dental-blue dark:text-blue-300'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                ? 'bg-dental-light-blue text-dental-blue'
+                : 'hover:bg-gray-100 text-gray-700'
             }`}
           >
             <Stethoscope className="h-5 w-5 mr-3" />
@@ -73,28 +72,29 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, userFirstName
             onClick={() => onTabChange('messaging')}
             className={`w-full flex items-center p-3 rounded-lg text-left transition-colors ${
               activeTab === 'messaging'
-                ? 'bg-dental-light-blue dark:bg-blue-900 text-dental-blue dark:text-blue-300'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                ? 'bg-dental-light-blue text-dental-blue'
+                : 'hover:bg-gray-100 text-gray-700'
             }`}
           >
             <MessageSquare className="h-5 w-5 mr-3" />
             <span>Messages</span>
           </button>
+          
+          <Button
+            variant="outline"
+            className="w-full mt-4 border-dental-blue/30 text-dental-blue"
+            onClick={() => navigate('/')}
+          >
+            <Home className="h-5 w-5 mr-3" />
+            <span>Main Website</span>
+          </Button>
         </nav>
       </div>
       
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-        <button 
-          onClick={toggleTheme}
-          className="w-full flex items-center p-3 rounded-lg text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
-        >
-          {theme === 'light' ? <Moon className="h-5 w-5 mr-3" /> : <Sun className="h-5 w-5 mr-3" />}
-          <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
-        </button>
-        
+      <div className="p-4 border-t border-gray-200 space-y-2">
         <button 
           onClick={handleLogout}
-          className="w-full flex items-center p-3 rounded-lg text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
+          className="w-full flex items-center p-3 rounded-lg text-left hover:bg-gray-100 text-gray-700 transition-colors"
         >
           <LogOut className="h-5 w-5 mr-3" />
           <span>Sign Out</span>

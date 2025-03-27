@@ -1,14 +1,18 @@
 
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Phone } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, Phone, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { supabase } from "@/integrations/supabase/client";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navLinks = [
     { name: 'Home', href: '/' },
@@ -24,6 +28,26 @@ const Navbar = () => {
     };
 
     window.addEventListener('scroll', handleScroll);
+    
+    // Check if user is logged in
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+      
+      if (session) {
+        // Check if admin
+        const { data, error } = await supabase
+          .from('blog_authors')
+          .select('*')
+          .eq('email', session.user.email)
+          .single();
+          
+        setIsAdmin(!error && !!data);
+      }
+    };
+    
+    checkAuth();
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
@@ -78,9 +102,32 @@ const Navbar = () => {
               <Phone size={16} className="text-dental-blue" />
               <span className="font-medium">+1 (555) 123-4567</span>
             </div>
-            <Button asChild className="bg-dental-blue hover:bg-dental-blue/90">
-              <Link to="/booking">Book Appointment</Link>
-            </Button>
+            
+            {isLoggedIn ? (
+              <div className="flex gap-2">
+                {isAdmin ? (
+                  <Button asChild className="bg-dental-blue hover:bg-dental-blue/90">
+                    <Link to="/admin-dashboard">Admin Dashboard</Link>
+                  </Button>
+                ) : (
+                  <Button asChild className="bg-dental-blue hover:bg-dental-blue/90">
+                    <Link to="/patient-portal">My Account</Link>
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Button asChild className="bg-dental-blue hover:bg-dental-blue/90">
+                  <Link to="/booking">Book Appointment</Link>
+                </Button>
+                <Button asChild variant="outline" className="border-dental-blue text-dental-blue">
+                  <Link to="/patient-portal">
+                    <User size={16} className="mr-2" />
+                    Login
+                  </Link>
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -127,9 +174,32 @@ const Navbar = () => {
               <Phone size={20} className="text-dental-blue" />
               <span className="font-medium">+1 (555) 123-4567</span>
             </div>
-            <Button asChild className="w-full bg-dental-blue hover:bg-dental-blue/90">
-              <Link to="/booking">Book Appointment</Link>
-            </Button>
+            
+            {isLoggedIn ? (
+              <div className="flex flex-col gap-2">
+                {isAdmin ? (
+                  <Button asChild className="w-full bg-dental-blue hover:bg-dental-blue/90">
+                    <Link to="/admin-dashboard">Admin Dashboard</Link>
+                  </Button>
+                ) : (
+                  <Button asChild className="w-full bg-dental-blue hover:bg-dental-blue/90">
+                    <Link to="/patient-portal">My Account</Link>
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <Button asChild className="w-full bg-dental-blue hover:bg-dental-blue/90">
+                  <Link to="/booking">Book Appointment</Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full border-dental-blue text-dental-blue">
+                  <Link to="/patient-portal">
+                    <User size={16} className="mr-2" />
+                    Login
+                  </Link>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -13,7 +13,7 @@ import AdvisoryTab from '@/components/portal/AdvisoryTab';
 import MessagingTab from '@/components/portal/MessagingTab';
 import { useToast } from "@/hooks/use-toast";
 import Sidebar from '@/components/portal/Sidebar';
-import { ThemeProvider } from '@/hooks/use-theme';
+import Navbar from '@/components/layout/Navbar';
 
 const PatientPortal = () => {
   const [activeTab, setActiveTab] = useState("login");
@@ -84,8 +84,10 @@ const PatientPortal = () => {
 
   if (isAuthenticated && clientData) {
     return (
-      <ThemeProvider>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+      <div className="min-h-screen bg-gray-50">
+        <div className="h-16"></div> {/* Spacer for fixed navbar */}
+        <Navbar />
+        <div className="flex min-h-[calc(100vh-4rem)]">
           <Sidebar 
             activeTab={activePortalTab}
             onTabChange={setActivePortalTab}
@@ -94,12 +96,13 @@ const PatientPortal = () => {
           />
           
           <main className="flex-1 p-8">
-            <div className="flex justify-end mb-4">
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-2xl font-bold text-dental-blue">My Patient Portal</h1>
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={() => navigate('/')}
-                className="text-dental-blue border-dental-blue/30 dark:text-blue-400 dark:border-blue-500/30"
+                className="text-dental-blue border-dental-blue/30"
               >
                 <Home className="mr-2 h-4 w-4" />
                 Back to Main Website
@@ -107,9 +110,9 @@ const PatientPortal = () => {
             </div>
             
             <div className="max-w-5xl mx-auto">
-              <Card className="shadow-lg border-none overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+              <Card className="shadow-lg border-none overflow-hidden">
                 <CardContent className="p-6">
-                  <Tabs value={activePortalTab}>
+                  <Tabs value={activePortalTab} onValueChange={setActivePortalTab}>
                     <TabsContent value="appointments">
                       <AppointmentTab clientId={clientData.id} />
                     </TabsContent>
@@ -127,79 +130,74 @@ const PatientPortal = () => {
             </div>
           </main>
         </div>
-      </ThemeProvider>
+      </div>
     );
   }
 
   return (
-    <ThemeProvider>
-      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-        <header className="bg-white dark:bg-gray-800 shadow-sm">
-          <div className="container mx-auto px-4 py-4">
-            <h1 className="text-xl font-semibold text-dental-blue dark:text-blue-400">Dr. Smile Dental Clinic</h1>
-          </div>
-        </header>
-        
-        <main className="flex-grow pt-12 pb-20">
-          <div className="container mx-auto px-4">
-            <div className="max-w-md mx-auto">
-              <div className="text-center mb-8 animate-fade-up">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-dental-light-blue dark:bg-blue-900 rounded-full mb-4">
-                  <UserCircle className="h-10 w-10 text-dental-blue dark:text-blue-400" />
-                </div>
-                <h1 className="text-3xl font-bold mb-2 dark:text-white">Patient Portal</h1>
-                <p className="text-muted-foreground dark:text-gray-400">
-                  Access your dental records, appointments, and more.
-                </p>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <div className="h-16"></div> {/* Spacer for fixed navbar */}
+      <Navbar />
+      
+      <main className="flex-grow pt-12 pb-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-md mx-auto">
+            <div className="text-center mb-8 animate-fade-up">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-dental-light-blue rounded-full mb-4">
+                <UserCircle className="h-10 w-10 text-dental-blue" />
               </div>
-              
-              <Card className="shadow-lg border-none overflow-hidden animate-fade-up dark:bg-gray-800 dark:border-gray-700" style={{ animationDelay: '0.2s' }}>
-                <CardContent className="p-8">
-                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <div className="flex border-b mb-6">
-                      <Button
-                        variant="ghost"
-                        className={`flex-1 rounded-none border-b-2 ${
-                          activeTab === 'login' 
-                            ? 'border-dental-blue dark:border-blue-400 text-dental-blue dark:text-blue-400' 
-                            : 'border-transparent text-gray-500 dark:text-gray-400'
-                        }`}
-                        onClick={() => setActiveTab('login')}
-                      >
-                        Login
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        className={`flex-1 rounded-none border-b-2 ${
-                          activeTab === 'register' 
-                            ? 'border-dental-blue dark:border-blue-400 text-dental-blue dark:text-blue-400' 
-                            : 'border-transparent text-gray-500 dark:text-gray-400'
-                        }`}
-                        onClick={() => setActiveTab('register')}
-                      >
-                        Register
-                      </Button>
-                    </div>
-                    <TabsContent value="login">
-                      <PatientLogin />
-                    </TabsContent>
-                    <TabsContent value="register">
-                      <PatientRegister />
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
+              <h1 className="text-3xl font-bold mb-2">Patient Portal</h1>
+              <p className="text-muted-foreground">
+                Access your dental records, appointments, and more.
+              </p>
             </div>
+            
+            <Card className="shadow-lg border-none overflow-hidden animate-fade-up" style={{ animationDelay: '0.2s' }}>
+              <CardContent className="p-8">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <div className="flex border-b mb-6">
+                    <Button
+                      variant="ghost"
+                      className={`flex-1 rounded-none border-b-2 ${
+                        activeTab === 'login' 
+                          ? 'border-dental-blue text-dental-blue' 
+                          : 'border-transparent text-gray-500'
+                      }`}
+                      onClick={() => setActiveTab('login')}
+                    >
+                      Login
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className={`flex-1 rounded-none border-b-2 ${
+                        activeTab === 'register' 
+                          ? 'border-dental-blue text-dental-blue' 
+                          : 'border-transparent text-gray-500'
+                      }`}
+                      onClick={() => setActiveTab('register')}
+                    >
+                      Register
+                    </Button>
+                  </div>
+                  <TabsContent value="login">
+                    <PatientLogin />
+                  </TabsContent>
+                  <TabsContent value="register">
+                    <PatientRegister />
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
           </div>
-        </main>
-        
-        <footer className="bg-white dark:bg-gray-800 shadow-sm mt-auto py-6">
-          <div className="container mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
-            &copy; {new Date().getFullYear()} Dr. Smile Dental Clinic. All rights reserved.
-          </div>
-        </footer>
-      </div>
-    </ThemeProvider>
+        </div>
+      </main>
+      
+      <footer className="bg-white shadow-sm mt-auto py-6">
+        <div className="container mx-auto px-4 text-center text-sm text-gray-500">
+          &copy; {new Date().getFullYear()} Dr. Smile Dental Clinic. All rights reserved.
+        </div>
+      </footer>
+    </div>
   );
 };
 
