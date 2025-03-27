@@ -32,47 +32,55 @@ const AdvisoryTab: React.FC<AdvisoryTabProps> = ({ clientId }) => {
       try {
         // Get data from Supabase advisories table
         const { data, error } = await supabase
-          .from('blog_posts')  // Using blog_posts as a fallback table since advisories doesn't exist yet
+          .from('advisories')
           .select('*')
-          .limit(3);  // Limit to a few entries for demonstration
+          .eq('client_id', clientId)
+          .order('created_at', { ascending: false });
           
         if (error) throw error;
         
-        // Transform the blog posts into advisory format for demo purposes
-        const demoAdvisories: Advisory[] = [
-          {
-            id: '1',
-            created_at: new Date().toISOString(),
-            title: 'Post-Treatment Care Instructions',
-            content: 'Remember to rinse with saltwater 3 times daily for the next week. Avoid hard foods and maintain regular brushing, but be gentle around the treated area.',
-            dentist_name: 'Dr. Johnson',
-            appointment_id: null,
-            priority: 'high',
-            is_read: false
-          },
-          {
-            id: '2',
-            created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-            title: 'Medication Reminder',
-            content: 'Please complete your full course of antibiotics as prescribed. Take with food to minimize stomach upset.',
-            dentist_name: 'Dr. Smith',
-            appointment_id: null,
-            priority: 'medium',
-            is_read: true
-          },
-          {
-            id: '3',
-            created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            title: 'Dental Checkup Recommendation',
-            content: 'Based on your last visit, we recommend scheduling a follow-up cleaning in 3 months to maintain optimal oral health.',
-            dentist_name: 'Dr. Johnson',
-            appointment_id: null,
-            priority: 'low',
-            is_read: true
-          }
-        ];
-        
-        setAdvisories(demoAdvisories);
+        if (data && data.length > 0) {
+          setAdvisories(data as Advisory[]);
+        } else {
+          // Use demo data if no advisories found
+          const demoAdvisories: Advisory[] = [
+            {
+              id: '1',
+              created_at: new Date().toISOString(),
+              title: 'Post-Treatment Care Instructions',
+              content: 'Remember to rinse with saltwater 3 times daily for the next week. Avoid hard foods and maintain regular brushing, but be gentle around the treated area.',
+              dentist_name: 'Dr. Johnson',
+              appointment_id: null,
+              priority: 'high',
+              is_read: false,
+              client_id: clientId
+            },
+            {
+              id: '2',
+              created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+              title: 'Medication Reminder',
+              content: 'Please complete your full course of antibiotics as prescribed. Take with food to minimize stomach upset.',
+              dentist_name: 'Dr. Smith',
+              appointment_id: null,
+              priority: 'medium',
+              is_read: true,
+              client_id: clientId
+            },
+            {
+              id: '3',
+              created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+              title: 'Dental Checkup Recommendation',
+              content: 'Based on your last visit, we recommend scheduling a follow-up cleaning in 3 months to maintain optimal oral health.',
+              dentist_name: 'Dr. Johnson',
+              appointment_id: null,
+              priority: 'low',
+              is_read: true,
+              client_id: clientId
+            }
+          ];
+          
+          setAdvisories(demoAdvisories);
+        }
       } catch (error: any) {
         console.error('Error fetching advisories:', error);
         toast({
@@ -91,7 +99,8 @@ const AdvisoryTab: React.FC<AdvisoryTabProps> = ({ clientId }) => {
             dentist_name: 'Dr. Johnson',
             appointment_id: null,
             priority: 'high',
-            is_read: false
+            is_read: false,
+            client_id: clientId
           },
           {
             id: '2',
@@ -101,7 +110,8 @@ const AdvisoryTab: React.FC<AdvisoryTabProps> = ({ clientId }) => {
             dentist_name: 'Dr. Smith',
             appointment_id: null,
             priority: 'medium',
-            is_read: true
+            is_read: true,
+            client_id: clientId
           },
           {
             id: '3',
@@ -111,7 +121,8 @@ const AdvisoryTab: React.FC<AdvisoryTabProps> = ({ clientId }) => {
             dentist_name: 'Dr. Johnson',
             appointment_id: null,
             priority: 'low',
-            is_read: true
+            is_read: true,
+            client_id: clientId
           }
         ]);
       } finally {
@@ -121,6 +132,36 @@ const AdvisoryTab: React.FC<AdvisoryTabProps> = ({ clientId }) => {
     
     fetchAdvisories();
   }, [clientId, toast]);
+  
+  const markAsRead = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('advisories')
+        .update({ is_read: true })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setAdvisories(prev => 
+        prev.map(advisory => 
+          advisory.id === id ? { ...advisory, is_read: true } : advisory
+        )
+      );
+      
+      toast({
+        title: "Success",
+        description: "Advisory marked as read",
+      });
+    } catch (error: any) {
+      console.error('Error marking advisory as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update advisory status",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
@@ -182,11 +223,18 @@ const AdvisoryTab: React.FC<AdvisoryTabProps> = ({ clientId }) => {
                 </CardContent>
                 <CardFooter className="flex justify-between pt-0">
                   <div className="text-sm text-gray-500">
-                    {advisory.is_read && (
+                    {advisory.is_read ? (
                       <span className="flex items-center">
                         <CheckCircle className="w-4 h-4 mr-1 text-green-500" />
                         Read
                       </span>
+                    ) : (
+                      <button 
+                        onClick={() => markAsRead(advisory.id)}
+                        className="text-dental-blue hover:text-dental-blue-dark flex items-center"
+                      >
+                        <span>Mark as read</span>
+                      </button>
                     )}
                   </div>
                 </CardFooter>

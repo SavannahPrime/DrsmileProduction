@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      advisories: {
+        Row: {
+          appointment_id: string | null
+          client_id: string
+          content: string
+          created_at: string
+          dentist_name: string
+          id: string
+          is_read: boolean
+          priority: string
+          title: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          client_id: string
+          content: string
+          created_at?: string
+          dentist_name: string
+          id?: string
+          is_read?: boolean
+          priority?: string
+          title: string
+        }
+        Update: {
+          appointment_id?: string | null
+          client_id?: string
+          content?: string
+          created_at?: string
+          dentist_name?: string
+          id?: string
+          is_read?: boolean
+          priority?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advisories_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisories_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_authors: {
         Row: {
           created_at: string | null
