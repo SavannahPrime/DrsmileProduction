@@ -47,8 +47,8 @@ const PatientLogin = () => {
         // User is admin, redirect to admin dashboard
         navigate('/admin-dashboard');
       } else {
-        // User is patient, redirect to booking
-        navigate('/booking');
+        // User is patient, stay in portal
+        // Navigation will be handled by the PatientPortal component
       }
       
       toast({
@@ -68,11 +68,11 @@ const PatientLogin = () => {
     }
   };
 
-  const loginWithDemo = async (type: 'patient' | 'admin') => {
+  const loginWithDemo = async () => {
     setIsSubmitting(true);
     
     try {
-      const email = type === 'patient' ? 'patient@drsmile.com' : 'admin@drsmile.com';
+      const email = 'patient@drsmile.com';
       const password = 'password123'; // Demo password
       
       const { error } = await supabase.auth.signInWithPassword({
@@ -84,16 +84,9 @@ const PatientLogin = () => {
       
       toast({
         title: "Demo Login Successful!",
-        description: `You are now logged in as a demo ${type}.`,
+        description: "You are now logged in as a demo patient.",
         variant: "default",
       });
-      
-      // Redirect to appropriate page
-      if (type === 'admin') {
-        navigate('/admin-dashboard');
-      } else {
-        navigate('/booking');
-      }
     } catch (error: any) {
       console.error('Demo login error:', error);
       toast({
@@ -169,32 +162,20 @@ const PatientLogin = () => {
       <div className="relative my-4">
         <Separator />
         <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-xs text-gray-500">
-          OR TRY DEMO ACCOUNTS
+          OR TRY DEMO ACCOUNT
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          className="border-dental-blue/30 hover:bg-dental-light-blue/20"
-          onClick={() => loginWithDemo('patient')}
-          disabled={isSubmitting}
-        >
-          <UserCheck className="mr-2 h-4 w-4" />
-          Demo Patient
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="border-dental-blue/30 hover:bg-dental-light-blue/20"
-          onClick={() => loginWithDemo('admin')}
-          disabled={isSubmitting}
-        >
-          <UserCheck className="mr-2 h-4 w-4" />
-          Demo Admin
-        </Button>
-      </div>
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full border-dental-blue/30 hover:bg-dental-light-blue/20"
+        onClick={loginWithDemo}
+        disabled={isSubmitting}
+      >
+        <UserCheck className="mr-2 h-4 w-4" />
+        Demo Patient Account
+      </Button>
     </form>
   );
 };

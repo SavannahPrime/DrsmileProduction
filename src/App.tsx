@@ -3,18 +3,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState } from "react";
-import Index from "./pages/Index";
-import About from "./pages/About";
-import Services from "./pages/Services";
+import PatientPortal from "./pages/PatientPortal";
 import Booking from "./pages/Booking";
-import Contact from "./pages/Contact";
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
-import PatientPortal from "./pages/PatientPortal";
 import AdminLogin from "./pages/AdminLogin";
 
 const App = () => {
@@ -28,17 +22,16 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/booking" element={<Booking />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/blog/:id" element={<BlogPost />} />
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            {/* Redirect home to patient portal */}
+            <Route path="/" element={<Navigate to="/patient-portal" replace />} />
+            
+            {/* Main routes */}
             <Route path="/patient-portal" element={<PatientPortal />} />
+            <Route path="/booking" element={<Booking />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/admin-login" element={<AdminLogin />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            
+            {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
