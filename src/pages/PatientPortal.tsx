@@ -1,17 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import PatientLogin from '@/components/portal/PatientLogin';
 import PatientRegister from '@/components/portal/PatientRegister';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from "@/integrations/supabase/client";
-import { UserCircle, Calendar, MessageSquare, Stethoscope, LogOut } from 'lucide-react';
+import { UserCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import AppointmentTab from '@/components/portal/AppointmentTab';
 import AdvisoryTab from '@/components/portal/AdvisoryTab';
 import MessagingTab from '@/components/portal/MessagingTab';
 import { useToast } from "@/hooks/use-toast";
+import Sidebar from '@/components/portal/Sidebar';
+import { ThemeProvider } from '@/hooks/use-theme';
 
 const PatientPortal = () => {
   const [activeTab, setActiveTab] = useState("login");
@@ -80,127 +82,110 @@ const PatientPortal = () => {
     };
   }, [navigate]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setIsAuthenticated(false);
-    setUser(null);
-    setClientData(null);
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    });
-  };
-
   if (isAuthenticated && clientData) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white shadow-sm">
-          <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <UserCircle className="h-8 w-8 text-dental-blue" />
-              <div>
-                <h1 className="text-xl font-semibold text-dental-blue">Dr. Smile Dental Clinic</h1>
-                <p className="text-sm text-gray-500">Welcome, {clientData.first_name} {clientData.last_name}</p>
-              </div>
+      <ThemeProvider>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+          <Sidebar 
+            activeTab={activePortalTab}
+            onTabChange={setActivePortalTab}
+            userFirstName={clientData.first_name}
+            userLastName={clientData.last_name}
+          />
+          
+          <main className="flex-1 p-8">
+            <div className="max-w-5xl mx-auto">
+              <Card className="shadow-lg border-none overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+                <CardContent className="p-6">
+                  <TabsContent value="appointments" className={activePortalTab === 'appointments' ? 'block' : 'hidden'}>
+                    <AppointmentTab clientId={clientData.id} />
+                  </TabsContent>
+                  
+                  <TabsContent value="advisory" className={activePortalTab === 'advisory' ? 'block' : 'hidden'}>
+                    <AdvisoryTab clientId={clientData.id} />
+                  </TabsContent>
+                  
+                  <TabsContent value="messaging" className={activePortalTab === 'messaging' ? 'block' : 'hidden'}>
+                    <MessagingTab clientId={clientData.id} clientName={`${clientData.first_name} ${clientData.last_name}`} />
+                  </TabsContent>
+                </CardContent>
+              </Card>
             </div>
-            <Button variant="ghost" onClick={handleLogout} className="text-gray-500 hover:text-gray-700">
-              <LogOut className="h-5 w-5 mr-2" />
-              Sign Out
-            </Button>
-          </div>
-        </header>
-        
-        <main className="container mx-auto px-4 py-8">
-          <Card className="shadow-lg border-none overflow-hidden">
-            <Tabs value={activePortalTab} onValueChange={setActivePortalTab} className="w-full">
-              <TabsList className="grid grid-cols-3 p-0 h-auto">
-                <TabsTrigger value="appointments" className="py-3 data-[state=active]:bg-dental-light-blue">
-                  <Calendar className="h-5 w-5 mr-2" />
-                  Appointments
-                </TabsTrigger>
-                <TabsTrigger value="advisory" className="py-3 data-[state=active]:bg-dental-light-blue">
-                  <Stethoscope className="h-5 w-5 mr-2" />
-                  Doctor's Advice
-                </TabsTrigger>
-                <TabsTrigger value="messaging" className="py-3 data-[state=active]:bg-dental-light-blue">
-                  <MessageSquare className="h-5 w-5 mr-2" />
-                  Messages
-                </TabsTrigger>
-              </TabsList>
-              
-              <CardContent className="p-6">
-                <TabsContent value="appointments" className="mt-0 pt-4">
-                  <AppointmentTab clientId={clientData.id} />
-                </TabsContent>
-                
-                <TabsContent value="advisory" className="mt-0 pt-4">
-                  <AdvisoryTab clientId={clientData.id} />
-                </TabsContent>
-                
-                <TabsContent value="messaging" className="mt-0 pt-4">
-                  <MessagingTab clientId={clientData.id} clientName={`${clientData.first_name} ${clientData.last_name}`} />
-                </TabsContent>
-              </CardContent>
-            </Tabs>
-          </Card>
-        </main>
-        
-        <footer className="bg-white shadow-sm mt-auto py-6">
-          <div className="container mx-auto px-4 text-center text-sm text-gray-500">
-            &copy; {new Date().getFullYear()} Dr. Smile Dental Clinic. All rights reserved.
-          </div>
-        </footer>
-      </div>
+          </main>
+        </div>
+      </ThemeProvider>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-xl font-semibold text-dental-blue">Dr. Smile Dental Clinic</h1>
-        </div>
-      </header>
-      
-      <main className="flex-grow pt-12 pb-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-md mx-auto">
-            <div className="text-center mb-8 animate-fade-up">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-dental-light-blue rounded-full mb-4">
-                <UserCircle className="h-10 w-10 text-dental-blue" />
-              </div>
-              <h1 className="text-3xl font-bold mb-2">Patient Portal</h1>
-              <p className="text-muted-foreground">
-                Access your dental records, appointments, and more.
-              </p>
-            </div>
-            
-            <Card className="shadow-lg border-none overflow-hidden animate-fade-up" style={{ animationDelay: '0.2s' }}>
-              <CardContent className="p-8">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid grid-cols-2 mb-6 w-full">
-                    <TabsTrigger value="login">Login</TabsTrigger>
-                    <TabsTrigger value="register">Register</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="login">
-                    <PatientLogin />
-                  </TabsContent>
-                  <TabsContent value="register">
-                    <PatientRegister />
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
+    <ThemeProvider>
+      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+        <header className="bg-white dark:bg-gray-800 shadow-sm">
+          <div className="container mx-auto px-4 py-4">
+            <h1 className="text-xl font-semibold text-dental-blue dark:text-blue-400">Dr. Smile Dental Clinic</h1>
           </div>
-        </div>
-      </main>
-      
-      <footer className="bg-white shadow-sm mt-auto py-6">
-        <div className="container mx-auto px-4 text-center text-sm text-gray-500">
-          &copy; {new Date().getFullYear()} Dr. Smile Dental Clinic. All rights reserved.
-        </div>
-      </footer>
-    </div>
+        </header>
+        
+        <main className="flex-grow pt-12 pb-20">
+          <div className="container mx-auto px-4">
+            <div className="max-w-md mx-auto">
+              <div className="text-center mb-8 animate-fade-up">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-dental-light-blue dark:bg-blue-900 rounded-full mb-4">
+                  <UserCircle className="h-10 w-10 text-dental-blue dark:text-blue-400" />
+                </div>
+                <h1 className="text-3xl font-bold mb-2 dark:text-white">Patient Portal</h1>
+                <p className="text-muted-foreground dark:text-gray-400">
+                  Access your dental records, appointments, and more.
+                </p>
+              </div>
+              
+              <Card className="shadow-lg border-none overflow-hidden animate-fade-up dark:bg-gray-800 dark:border-gray-700" style={{ animationDelay: '0.2s' }}>
+                <CardContent className="p-8">
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <div className="flex border-b mb-6">
+                      <Button
+                        variant="ghost"
+                        className={`flex-1 rounded-none border-b-2 ${
+                          activeTab === 'login' 
+                            ? 'border-dental-blue dark:border-blue-400 text-dental-blue dark:text-blue-400' 
+                            : 'border-transparent text-gray-500 dark:text-gray-400'
+                        }`}
+                        onClick={() => setActiveTab('login')}
+                      >
+                        Login
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className={`flex-1 rounded-none border-b-2 ${
+                          activeTab === 'register' 
+                            ? 'border-dental-blue dark:border-blue-400 text-dental-blue dark:text-blue-400' 
+                            : 'border-transparent text-gray-500 dark:text-gray-400'
+                        }`}
+                        onClick={() => setActiveTab('register')}
+                      >
+                        Register
+                      </Button>
+                    </div>
+                    <TabsContent value="login">
+                      <PatientLogin />
+                    </TabsContent>
+                    <TabsContent value="register">
+                      <PatientRegister />
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </main>
+        
+        <footer className="bg-white dark:bg-gray-800 shadow-sm mt-auto py-6">
+          <div className="container mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
+            &copy; {new Date().getFullYear()} Dr. Smile Dental Clinic. All rights reserved.
+          </div>
+        </footer>
+      </div>
+    </ThemeProvider>
   );
 };
 

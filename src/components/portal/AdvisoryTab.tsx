@@ -6,21 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { Advisory } from '@/types/advisory';
 
 interface AdvisoryTabProps {
   clientId: string;
-}
-
-interface Advisory {
-  id: string;
-  created_at: string;
-  title: string;
-  content: string;
-  dentist_name: string;
-  appointment_id: string | null;
-  priority: string;
-  is_read: boolean;
-  client_id: string; // Added this property to match database schema
 }
 
 const AdvisoryTab: React.FC<AdvisoryTabProps> = ({ clientId }) => {
@@ -167,13 +156,13 @@ const AdvisoryTab: React.FC<AdvisoryTabProps> = ({ clientId }) => {
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'high':
-        return <Badge className="bg-red-100 text-red-800 border-red-200">Important</Badge>;
+        return <Badge className="bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800">Important</Badge>;
       case 'medium':
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Attention</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800">Attention</Badge>;
       case 'low':
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Info</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800">Info</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">General</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700">General</Badge>;
     }
   };
 
@@ -184,7 +173,7 @@ const AdvisoryTab: React.FC<AdvisoryTabProps> = ({ clientId }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-40">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dental-blue"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dental-blue dark:border-blue-400"></div>
       </div>
     );
   }
@@ -192,27 +181,32 @@ const AdvisoryTab: React.FC<AdvisoryTabProps> = ({ clientId }) => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-4 text-dental-blue">Doctor's Advice & Instructions</h2>
+        <h2 className="text-2xl font-bold mb-4 text-dental-blue dark:text-blue-400">Doctor's Advice & Instructions</h2>
         {advisories.length === 0 ? (
-          <Card className="border-dashed border-2 border-gray-200">
+          <Card className="border-dashed border-2 border-gray-200 dark:border-gray-700 dark:bg-gray-800">
             <CardContent className="p-6 text-center">
-              <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-medium mb-2">No Advice Available</h3>
-              <p className="text-gray-500">You don't have any advice or instructions from your dentist yet.</p>
+              <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
+              <h3 className="text-lg font-medium mb-2 dark:text-white">No Advice Available</h3>
+              <p className="text-gray-500 dark:text-gray-400">You don't have any advice or instructions from your dentist yet.</p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-4">
             {advisories.map((advisory) => (
-              <Card key={advisory.id} className={`overflow-hidden ${!advisory.is_read ? 'border-l-4 border-dental-blue' : ''}`}>
+              <Card 
+                key={advisory.id} 
+                className={`overflow-hidden dark:bg-gray-800 dark:border-gray-700 ${
+                  !advisory.is_read ? 'border-l-4 border-dental-blue dark:border-blue-400' : ''
+                }`}
+              >
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle className="flex items-center">
-                        {!advisory.is_read && <AlertCircle className="w-5 h-5 mr-2 text-dental-blue" />}
+                      <CardTitle className="flex items-center dark:text-white">
+                        {!advisory.is_read && <AlertCircle className="w-5 h-5 mr-2 text-dental-blue dark:text-blue-400" />}
                         {advisory.title}
                       </CardTitle>
-                      <CardDescription>
+                      <CardDescription className="dark:text-gray-400">
                         From: {advisory.dentist_name} • {formatDate(advisory.created_at)}
                       </CardDescription>
                     </div>
@@ -220,10 +214,10 @@ const AdvisoryTab: React.FC<AdvisoryTabProps> = ({ clientId }) => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="whitespace-pre-line">{advisory.content}</p>
+                  <p className="whitespace-pre-line dark:text-gray-300">{advisory.content}</p>
                 </CardContent>
                 <CardFooter className="flex justify-between pt-0">
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
                     {advisory.is_read ? (
                       <span className="flex items-center">
                         <CheckCircle className="w-4 h-4 mr-1 text-green-500" />
@@ -232,7 +226,7 @@ const AdvisoryTab: React.FC<AdvisoryTabProps> = ({ clientId }) => {
                     ) : (
                       <button 
                         onClick={() => markAsRead(advisory.id)}
-                        className="text-dental-blue hover:text-dental-blue-dark flex items-center"
+                        className="text-dental-blue hover:text-dental-blue-dark dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
                       >
                         <span>Mark as read</span>
                       </button>
