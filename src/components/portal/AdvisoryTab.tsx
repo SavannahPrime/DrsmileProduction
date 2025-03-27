@@ -20,6 +20,7 @@ interface Advisory {
   appointment_id: string | null;
   priority: string;
   is_read: boolean;
+  client_id: string; // Added this property to match database schema
 }
 
 const AdvisoryTab: React.FC<AdvisoryTabProps> = ({ clientId }) => {
