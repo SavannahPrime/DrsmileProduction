@@ -97,17 +97,19 @@ const PatientPortal = () => {
             <div className="max-w-5xl mx-auto">
               <Card className="shadow-lg border-none overflow-hidden dark:bg-gray-800 dark:border-gray-700">
                 <CardContent className="p-6">
-                  <TabsContent value="appointments" className={activePortalTab === 'appointments' ? 'block' : 'hidden'}>
-                    <AppointmentTab clientId={clientData.id} />
-                  </TabsContent>
-                  
-                  <TabsContent value="advisory" className={activePortalTab === 'advisory' ? 'block' : 'hidden'}>
-                    <AdvisoryTab clientId={clientData.id} />
-                  </TabsContent>
-                  
-                  <TabsContent value="messaging" className={activePortalTab === 'messaging' ? 'block' : 'hidden'}>
-                    <MessagingTab clientId={clientData.id} clientName={`${clientData.first_name} ${clientData.last_name}`} />
-                  </TabsContent>
+                  <Tabs value={activePortalTab}>
+                    <TabsContent value="appointments">
+                      <AppointmentTab clientId={clientData.id} />
+                    </TabsContent>
+                    
+                    <TabsContent value="advisory">
+                      <AdvisoryTab clientId={clientData.id} />
+                    </TabsContent>
+                    
+                    <TabsContent value="messaging">
+                      <MessagingTab clientId={clientData.id} clientName={`${clientData.first_name} ${clientData.last_name}`} />
+                    </TabsContent>
+                  </Tabs>
                 </CardContent>
               </Card>
             </div>
