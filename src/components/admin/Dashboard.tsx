@@ -2,6 +2,9 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from 'react-router-dom';
+import { Edit, Users, Calendar, ChartBar, MessageSquare, FileText } from 'lucide-react';
 import BookingsManager from '@/components/admin/BookingsManager';
 import ClientsManager from '@/components/admin/ClientsManager';
 import StaffManager from '@/components/admin/StaffManager';
@@ -11,22 +14,53 @@ import MessagesManager from '@/components/admin/MessagesManager';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("bookings");
+  const navigate = useNavigate();
   
   return (
     <div className="w-full space-y-6">
-      <h1 className="text-3xl font-bold mb-6 text-dental-blue">Admin Dashboard</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-dental-blue dark:text-blue-400">Admin Dashboard</h1>
+        
+        <div className="flex gap-3">
+          <Button 
+            onClick={() => navigate('/blog-admin')} 
+            className="bg-dental-blue hover:bg-dental-blue/90 dark:bg-blue-600 dark:hover:bg-blue-700"
+          >
+            <Edit className="mr-2 h-4 w-4" />
+            Advanced Blog Editor
+          </Button>
+        </div>
+      </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-6 mb-8">
-          <TabsTrigger value="bookings">Bookings</TabsTrigger>
-          <TabsTrigger value="clients">Clients</TabsTrigger>
-          <TabsTrigger value="staff">Staff</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="blog">Blog</TabsTrigger>
-          <TabsTrigger value="messages">Messages</TabsTrigger>
+          <TabsTrigger value="bookings" className="flex items-center">
+            <Calendar className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Bookings</span>
+          </TabsTrigger>
+          <TabsTrigger value="clients" className="flex items-center">
+            <Users className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Clients</span>
+          </TabsTrigger>
+          <TabsTrigger value="staff" className="flex items-center">
+            <Users className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Staff</span>
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center">
+            <ChartBar className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Analytics</span>
+          </TabsTrigger>
+          <TabsTrigger value="blog" className="flex items-center">
+            <FileText className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Blog</span>
+          </TabsTrigger>
+          <TabsTrigger value="messages" className="flex items-center">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Messages</span>
+          </TabsTrigger>
         </TabsList>
         
-        <Card className="border-dental-light-blue/30">
+        <Card className="border-dental-light-blue/30 dark:border-blue-800/30">
           <CardContent className="p-6">
             <TabsContent value="bookings" className="mt-0">
               <BookingsManager />

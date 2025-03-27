@@ -28,7 +28,19 @@ const AdminLogin = () => {
     setIsSubmitting(true);
     
     try {
-      // Check if the email is in the blog_authors table
+      // First, attempt to sign in
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
+      
+      if (signInError) throw signInError;
+      
+      if (!signInData.user) {
+        throw new Error('Login failed. User data not found.');
+      }
+      
+      // Now, check if the email is in the blog_authors table
       const { data: authorData, error: authorError } = await supabase
         .from('blog_authors')
         .select('*')
@@ -36,16 +48,10 @@ const AdminLogin = () => {
         .single();
       
       if (authorError || !authorData) {
+        // If not an admin, sign out and show error
+        await supabase.auth.signOut();
         throw new Error('Unauthorized access. Only administrators can log in here.');
       }
-      
-      // Proceed with login if the email is authorized
-      const { error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
-      
-      if (error) throw error;
       
       toast({
         title: "Login Successful!",
@@ -56,6 +62,7 @@ const AdminLogin = () => {
       // Redirect to admin dashboard page
       navigate('/admin-dashboard');
     } catch (error: any) {
+      console.error('Login error:', error);
       toast({
         title: "Login Failed",
         description: error.message || "Please check your credentials and try again.",
@@ -64,6 +71,14 @@ const AdminLogin = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // For development use, pre-fill with admin credentials
+  const fillAdminCreds = () => {
+    setFormData({
+      email: 'admin@drsmile.com',
+      password: 'DrSmile2023!'
+    });
   };
 
   return (
@@ -75,9 +90,9 @@ const AdminLogin = () => {
       </div>
       
       <Card className="border-blue-100">
-        <CardHeader className="bg-blue-50 pb-3">
-          <CardTitle className="text-center text-blue-800">Administrative Login</CardTitle>
-          <CardDescription className="text-center text-blue-600">
+        <CardHeader className="bg-blue-50 pb-3 dark:bg-blue-900/30">
+          <CardTitle className="text-center text-blue-800 dark:text-blue-300">Administrative Login</CardTitle>
+          <CardDescription className="text-center text-blue-600 dark:text-blue-400">
             Secure access for administrative staff only
           </CardDescription>
         </CardHeader>
@@ -86,7 +101,7 @@ const AdminLogin = () => {
             <div>
               <Label htmlFor="email">Admin Email</Label>
               <div className="flex mt-1.5">
-                <div className="bg-dental-light-blue text-dental-blue p-2.5 rounded-l-md">
+                <div className="bg-dental-light-blue text-dental-blue p-2.5 rounded-l-md dark:bg-blue-800 dark:text-blue-200">
                   <Mail size={18} />
                 </div>
                 <Input
@@ -110,7 +125,7 @@ const AdminLogin = () => {
                 </Button>
               </div>
               <div className="flex mt-1.5">
-                <div className="bg-dental-light-blue text-dental-blue p-2.5 rounded-l-md">
+                <div className="bg-dental-light-blue text-dental-blue p-2.5 rounded-l-md dark:bg-blue-800 dark:text-blue-200">
                   <Lock size={18} />
                 </div>
                 <Input
@@ -142,6 +157,17 @@ const AdminLogin = () => {
               </>
             )}
           </Button>
+          
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            className="mt-2 text-xs text-gray-500"
+            onClick={fillAdminCreds}
+          >
+            Use default admin credentials
+          </Button>
+          
           <p className="text-xs text-center text-gray-500 mt-4">
             This portal is for authorized personnel only. 
             Unauthorized access attempts may be monitored and reported.

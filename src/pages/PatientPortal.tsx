@@ -6,7 +6,7 @@ import PatientLogin from '@/components/portal/PatientLogin';
 import PatientRegister from '@/components/portal/PatientRegister';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from "@/integrations/supabase/client";
-import { UserCircle } from 'lucide-react';
+import { UserCircle, Home } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import AppointmentTab from '@/components/portal/AppointmentTab';
 import AdvisoryTab from '@/components/portal/AdvisoryTab';
@@ -94,6 +94,18 @@ const PatientPortal = () => {
           />
           
           <main className="flex-1 p-8">
+            <div className="flex justify-end mb-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/')}
+                className="text-dental-blue border-dental-blue/30 dark:text-blue-400 dark:border-blue-500/30"
+              >
+                <Home className="mr-2 h-4 w-4" />
+                Back to Main Website
+              </Button>
+            </div>
+            
             <div className="max-w-5xl mx-auto">
               <Card className="shadow-lg border-none overflow-hidden dark:bg-gray-800 dark:border-gray-700">
                 <CardContent className="p-6">
